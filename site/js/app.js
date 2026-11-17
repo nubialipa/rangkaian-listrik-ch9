@@ -12,6 +12,28 @@
   const VIEW_W = 600, VIEW_H = 400;
   let stopAnim = null;
   let idSoalTerakhir = null;
+  let modeGambar = 'animasi'; // 'animasi' atau 'bersih'
+
+  // Kartu soal: diketahui, ditanya, letak di PDF, dan slot gambar asli lokal
+  function infoHtml(p) {
+    const info = p.info;
+    if (!info) return '';
+    return `
+      <div class="kartu info-soal">
+        <div class="info-kolom">
+          <h3>Diketahui</h3>
+          <ul class="daftar">${info.diketahui.map((x) => `<li>${x}</li>`).join('')}</ul>
+        </div>
+        <div class="info-kolom">
+          <h3>Ditanya</h3>
+          <ul class="daftar">${info.ditanya.map((x) => `<li>${x}</li>`).join('')}</ul>
+          <p class="muted info-hal">Soal asli ada di halaman ${info.hal} PDF buku soal.</p>
+        </div>
+        <div class="info-asli">
+          <img src="asli/${encodeURIComponent(p.id)}.png" alt="Gambar soal asli ${esc(p.id)}" onerror="this.parentElement.remove()">
+        </div>
+      </div>`;
+  }
 
   /* ---------- penyimpanan kecil di browser (dibungkus try/catch) ---------- */
   const simpan = {
@@ -212,6 +234,8 @@
       <div style="margin-bottom:1rem"><span class="chip">${esc(p.tipe)}</span>${chipOmega}</div>
       <p class="muted" style="max-width:52rem">${esc(p.ringkas)}</p>
 
+      ${infoHtml(p)}
+
       <div class="soal-dua" style="margin-top:1rem">
         <div>
           <div class="kartu">
@@ -241,14 +265,20 @@
         </div>
 
         <div>
+          <div class="tab-gambar" role="tablist">
+            <button type="button" role="tab" id="tab-anim" class="tombol-tab ${modeGambar === 'animasi' ? 'aktif' : ''}">Animasi arus</button>
+            <button type="button" role="tab" id="tab-bersih" class="tombol-tab ${modeGambar === 'bersih' ? 'aktif' : ''}">Gambar bersih</button>
+          </div>
           <div class="panel-rangkaian">
-            <svg id="gambar" viewBox="0 0 ${VIEW_W} ${VIEW_H}" role="img" aria-label="Gambar rangkaian ${esc(p.id)} dengan animasi arus"></svg>
-            <div class="kontrol">
+            <svg id="gambar" viewBox="0 0 ${VIEW_W} ${VIEW_H}" role="img" aria-label="Gambar rangkaian ${esc(p.id)}"></svg>
+            <div class="kontrol" id="kontrol-anim" ${modeGambar === 'animasi' ? '' : 'style="display:none"'}>
               <button id="putar" type="button">Jeda</button>
               <label>Kecepatan <input id="kecepatan" type="range" min="0.1" max="2" step="0.1" value="1"></label>
               <label><input id="label" type="checkbox" checked> Label</label>
             </div>
-            <div class="catatan-animasi">Titik bergerak mengikuti arah arus sesaat. Animasi diperlambat; bentuk gelombangnya sama dengan hasil fasor.</div>
+            <div class="catatan-animasi">${modeGambar === 'animasi'
+              ? 'Titik bergerak mengikuti arah arus sesaat. Animasi diperlambat; bentuk gelombangnya sama dengan hasil fasor.'
+              : 'Gambar ulang dari nol sesuai netlist soal. Nilai pada label adalah nilai yang diberikan soal.'}</div>
           </div>
 
           <div class="kartu" style="margin-top:1rem">
@@ -284,8 +314,11 @@
       viewSoal(p.id, step);
     });
 
+    document.getElementById('tab-anim').addEventListener('click', () => { modeGambar = 'animasi'; viewSoal(p.id, step); });
+    document.getElementById('tab-bersih').addEventListener('click', () => { modeGambar = 'bersih'; viewSoal(p.id, step); });
+
     if (stopAnim) stopAnim();
-    stopAnim = mulaiAnimasi(p, document.getElementById('gambar'));
+    stopAnim = mulaiAnimasi(p, document.getElementById('gambar'), modeGambar === 'bersih');
   }
 
   function hasilHtml(outs) {
@@ -426,7 +459,7 @@
     }
   }
 
-  function mulaiAnimasi(p, svg) {
+  function mulaiAnimasi(p, svg, statis = false) {
     if (!svg) return () => {};
     svg.innerHTML = '';
     const pos = p.pos;
@@ -490,7 +523,7 @@
       if (!e.wire) gambarSimbol(simbolG, e, sg);
 
       const dots = [];
-      for (let j = 0; j < 5; j++) dots.push(svgEl('circle', { r: 3.2, fill: '#ffc35a' }, dotG));
+      if (!statis) for (let j = 0; j < 5; j++) dots.push(svgEl('circle', { r: 3.2, fill: '#ffc35a' }, dotG));
 
       const mx = (sg.x1 + sg.x2) / 2, my = (sg.y1 + sg.y2) / 2;
       const len = Math.hypot(sg.x2 - sg.x1, sg.y2 - sg.y1) || 1;
@@ -504,7 +537,7 @@
         x: (mx + nx * 30).toFixed(1), y: (my + ny * 30 + 16).toFixed(1),
         fill: '#9aa8b8', 'font-size': 10, 'text-anchor': 'middle',
       }, labelG);
-      rec.push({ e, info, dots, nama, id: e.id });
+      rec.push({ e, info, dots, nama, lbl, id: e.id });
     }
 
     const namaSimpul = new Set();
@@ -525,6 +558,12 @@
     const btnPutar = document.getElementById('putar');
     const sliderKec = document.getElementById('kecepatan');
     const cekLabel = document.getElementById('label');
+    if (statis) {
+      // Gambar bersih: label menampilkan nilai soal, tanpa animasi
+      rec.forEach((r) => { r.nama.textContent = ''; });
+      rec.forEach((r) => { r.lbl.textContent = r.e.label || r.e.id; });
+      return () => {};
+    }
     btnPutar.onclick = () => {
       berjalan = !berjalan;
       btnPutar.textContent = berjalan ? 'Jeda' : 'Putar';

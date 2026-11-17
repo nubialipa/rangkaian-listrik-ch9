@@ -147,6 +147,17 @@
   footer { text-align: center; color: var(--tinta-lembut); font-size: .8rem; padding: 1.5rem; }
 
 
+  /* Kartu diketahui/ditanya dan tab gambar */
+  .info-soal { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.4rem; align-items: start; }
+  .info-soal h3 { color: var(--aksen); font-size: .9rem; text-transform: uppercase; letter-spacing: .04em; }
+  .info-hal { font-size: .85rem; margin-top: .3rem; }
+  .info-asli { grid-column: 1 / -1; }
+  .info-asli img { max-width: 100%; border: 1px solid var(--garis); border-radius: 6px; }
+  @media (max-width: 760px) { .info-soal { grid-template-columns: 1fr; } }
+  .tab-gambar { display: flex; gap: .4rem; margin-bottom: .5rem; }
+  .tombol-tab { font: inherit; font-size: .88rem; padding: .35rem .9rem; border-radius: 999px; border: 1px solid var(--garis); background: var(--kartu); color: var(--tinta); cursor: pointer; }
+  .tombol-tab.aktif { background: var(--aksen); border-color: var(--aksen); color: #fff; }
+
   /* Timer fokus */
   .fokus { display: flex; align-items: center; gap: .45rem; font-size: .85rem; }
   .fokus-mode { font-weight: 600; opacity: .9; }
@@ -196,6 +207,7 @@
 <script src="vendor/katex/auto-render.min.js"></script>
 <script src="js/solver.js"></script>
 <script src="js/problems.js"></script>
+<script src="js/info.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
