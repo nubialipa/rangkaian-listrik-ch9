@@ -612,6 +612,7 @@
     if (bagian[0] === 'soal' && bagian[1]) return { tipe: 'soal', id: bagian[1], indeks: bagian[2] ? Number(bagian[2]) - 1 : 0 };
     if (bagian[0] === 'soal') return { tipe: 'daftar' };
     if (bagian[0] === 'kunci') return { tipe: 'kunci' };
+    if (bagian[0] === 'materi') return { tipe: 'materi', bagian: bagian.slice(1) };
     return { tipe: 'peta' };
   }
 
@@ -623,6 +624,7 @@
     if (r.tipe === 'peta') viewPeta();
     else if (r.tipe === 'daftar') viewDaftarSoal();
     else if (r.tipe === 'kunci') viewKunci();
+    else if (r.tipe === 'materi') { setTab('materi'); Materi.render(app, r.bagian); }
     else viewSoal(r.id, r.indeks);
     window.scrollTo({ top: 0 });
   }
