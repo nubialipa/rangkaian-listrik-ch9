@@ -368,7 +368,11 @@
 
   /* ---------- render ---------- */
   function render(host, bagian) {
-    const idx = bagian && bagian[0] ? PELAJARAN.findIndex((p) => p.id === bagian[0]) : -1;
+    const kepala = bagian && bagian[0];
+    if (kepala === 'contoh') return renderContohRute(host, bagian[1]);
+    if (kepala === 'ujian') return renderUjian(host);
+    if (kepala === 'glosarium') return renderGlosarium(host);
+    const idx = kepala ? PELAJARAN.findIndex((p) => p.id === kepala) : -1;
     if (idx < 0) return renderDaftar(host);
     renderPelajaran(host, idx);
   }
@@ -376,12 +380,32 @@
   function renderDaftar(host) {
     host.innerHTML = `
       <h1>Penjelasan materi Bab 9</h1>
+      <div class="kartu">
+        <h3>Mulai dari sini</h3>
+        <p>Ujian Kamis pukul 08.00 hanya satu soal, tetapi soalnya bisa berasal dari bab ini. Urutan belajar yang disarankan:</p>
+        <ol class="langkah-peta">
+          <li>Penjelasan materi bagian 1 sampai 3 (sinus, fasor, elemen R/L/C).</li>
+          <li><a href="#/materi/contoh">Contoh terbimbing</a>, mulai dari contoh 1.</li>
+          <li><a href="#/materi/ujian">Panduan ujian</a> dan daftar periksa.</li>
+        </ol>
+        <p class="muted"><a href="#/materi/glosarium">Glosarium</a> bisa dibuka kapan saja.</p>
+      </div>
+
+      <h2>Penjelasan materi</h2>
       <p class="muted">Setiap bagian menjelaskan satu gagasan dengan kata-kata sendiri, lalu memberi contoh dan latihan singkat. Alat bantu interaktif bisa diubah nilainya untuk melihat efeknya.</p>
       <div class="grid-soal">${PELAJARAN.map((p, i) => `
         <a class="kartu kartu-soal" href="#/materi/${p.id}">
           <div class="nomor">BAGIAN ${i + 1}</div>
           <h3>${esc(p.judul)}</h3>
           <p class="muted">${esc(p.ringkas)}</p>
+        </a>`).join('')}</div>
+
+      <h2 style="margin-top:1.4rem">Contoh terbimbing</h2>
+      <p class="muted">Contoh dari materi dosen, dikerjakan satu langkah per klik. Angkanya dicek ulang dengan solver.</p>
+      <div class="grid-soal">${CONTOH.map((c, i) => `
+        <a class="kartu kartu-soal" href="#/materi/contoh/${c.id}">
+          <div class="nomor">CONTOH ${i + 1}</div>
+          <h3>${esc(c.judul)}</h3>
         </a>`).join('')}</div>`;
     math(host);
   }
@@ -431,6 +455,201 @@
       });
     });
     math(host);
+  }
+
+  /* ---------- contoh terbimbing: satu langkah per klik ---------- */
+  function renderContohRute(host, id) {
+    const c = (typeof CONTOH !== 'undefined' ? CONTOH : []).find((x) => x.id === id);
+    if (!c) return renderContohDaftar(host);
+    const r = c.hitung();
+    const langkah = c.langkah(r);
+    const idx = CONTOH.indexOf(c);
+    const sebelum = idx > 0 ? CONTOH[idx - 1] : null;
+    const sesudah = idx < CONTOH.length - 1 ? CONTOH[idx + 1] : null;
+    let tampil = 1; // jumlah langkah yang sudah terbuka
+
+    host.innerHTML = `
+      <div class="nomor">CONTOH ${idx + 1} DARI ${CONTOH.length}</div>
+      <h1>${esc(c.judul)}</h1>
+      <div class="kartu">
+        <h3>Soal</h3>
+        <div class="isi-materi">$${c.soal}$</div>
+      </div>
+      <div class="kartu">
+        <h3>Gambar rangkaian</h3>
+        <p class="muted">Gambar ini dibuat ulang dari nol sesuai soal. Nilai pada label adalah nilai yang diberikan soal.</p>
+        <svg id="contoh-gambar" viewBox="0 0 600 400" class="grafik"></svg>
+      </div>
+      <div class="kartu">
+        <div class="stepper-atas">
+          <h3 id="contoh-judul-langkah" style="margin:0"></h3>
+          <span class="muted" id="contoh-posisi"></span>
+        </div>
+        <div id="contoh-langkah"></div>
+        <p class="muted" style="margin-top:.6rem">Coba tulis langkah berikutnya di kertas dulu. Setelah itu klik lanjut.</p>
+        <div class="baris-nav">
+          <button type="button" class="tombol" id="contoh-mundur">← Sebelumnya</button>
+          <button type="button" class="tombol utama" id="contoh-maju">Langkah berikutnya →</button>
+        </div>
+      </div>
+      <div class="kartu" id="contoh-selesai" hidden>
+        <h3>Pelajaran dari contoh ini</h3>
+        <ul class="daftar">${c.pelajaran.map((x) => `<li>${x}</li>`).join('')}</ul>
+        <p class="muted" style="margin-top:.6rem">Hasil dihitung ulang oleh solver dan sudah dicocokkan dengan jawaban dosen.</p>
+      </div>
+      <div class="baris-nav">
+        ${sebelum ? `<a class="tombol" href="#/materi/contoh/${sebelum.id}">← ${esc(sebelum.judul)}</a>` : `<a class="tombol" href="#/materi">Kembali ke materi</a>`}
+        ${sesudah ? `<a class="tombol" href="#/materi/contoh/${sesudah.id}">${esc(sesudah.judul)} →</a>` : `<a class="tombol" href="#/materi/ujian">Panduan ujian →</a>`}
+      </div>`;
+
+    const gambarEl = host.querySelector('#contoh-gambar');
+    if (window.gambarRangkaian) {
+      window.gambarRangkaian(gambarEl, {
+        pos: c.pos, ground: c.ground,
+        display: () => [{ omega: null, elements: c.elements() }],
+      }, true);
+    }
+
+    const tampilkan = () => {
+      const daftar = host.querySelector('#contoh-langkah');
+      const aktif = langkah[tampil - 1];
+      host.querySelector('#contoh-judul-langkah').textContent = `Langkah ${tampil}: ${aktif.j}`;
+      host.querySelector('#contoh-posisi').textContent = `${tampil} dari ${langkah.length}`;
+      daftar.innerHTML = `<div class="isi-materi">${aktif.t}</div>`;
+      host.querySelector('#contoh-mundur').disabled = tampil === 1;
+      host.querySelector('#contoh-maju').textContent = tampil === langkah.length ? 'Selesai' : 'Langkah berikutnya →';
+      host.querySelector('#contoh-selesai').hidden = tampil < langkah.length;
+      math(host);
+    };
+    host.querySelector('#contoh-maju').addEventListener('click', () => {
+      if (tampil < langkah.length) tampil++;
+      tampilkan();
+    });
+    host.querySelector('#contoh-mundur').addEventListener('click', () => {
+      if (tampil > 1) tampil--;
+      tampilkan();
+    });
+    tampilkan();
+  }
+
+  function renderContohDaftar(host) {
+    host.innerHTML = `
+      <h1>Contoh terbimbing</h1>
+      <p class="muted">Setiap contoh dikerjakan satu langkah per klik. Coba tulis langkah berikutnya sendiri sebelum melihatnya. Mulai dari contoh 1 kalau kamu belum terbiasa dengan tegangan simpul.</p>
+      <div class="grid-soal">${CONTOH.map((c, i) => `
+        <a class="kartu kartu-soal" href="#/materi/contoh/${c.id}">
+          <div class="nomor">CONTOH ${i + 1}</div>
+          <h3>${esc(c.judul)}</h3>
+        </a>`).join('')}</div>`;
+    math(host);
+  }
+
+  /* ---------- panduan ujian ---------- */
+  const KUNCI_UJIAN = 'rl-ujian-cek';
+  const cekBaca = () => { try { return JSON.parse(localStorage.getItem(KUNCI_UJIAN) || '[]'); } catch (e) { return []; } };
+  const cekTulis = (v) => { try { localStorage.setItem(KUNCI_UJIAN, JSON.stringify(v)); } catch (e) { /* abaikan */ } };
+
+  const DAFTAR_UJIAN = [
+    'Ubah semua sinus ke kosinus sebelum apa pun (sin θ = cos(θ − 90°)).',
+    'Hitung ω, lalu X_L = ωL dan X_C = −1/(ωC). Kapasitor selalu negatif.',
+    'Ubah ke fasor dan tulis impedansi: R, jωL, −j/(ωC).',
+    'Pilih metode: seri–paralel (tanpa sumber tak-bebas), tegangan simpul (sedikit simpul), mesh (sedikit loop), Thévenin (ditanya Z atau V di terminal).',
+    'Kalau ada sumber tak-bebas: jangan dimatikan kecuali untuk mencari Z dengan sumber uji.',
+    'Hitung dalam bentuk rektangular, lalu ubah ke polar untuk hasil akhir. Periksa kuadran sudut.',
+    'Ubah hasil kembali ke bentuk kosinus: |V|cos(ωt + θ).',
+    'Cek: substitusi balik ke persamaan awal, atau jumlahkan arus/tegangan.',
+  ];
+
+  const KESALAHAN = [
+    'Lupa mengubah sinus ke kosinus, sehingga sudut melenceng 90°.',
+    'Menulis kapasitor sebagai +j. Kapasitor selalu −j/(ωC).',
+    'Menjumlahkan fasor dengan frekuensi berbeda.',
+    'Mematikan sumber tak-bebas padahal hanya boleh dimatikan sumber bebas.',
+    'Lupa satuan: mA dan Ω tidak boleh dicampur.',
+    'Lupa kuadran saat memakai tan⁻¹ pada kalkulator.',
+  ];
+
+  function renderUjian(host) {
+    const sudah = cekBaca();
+    host.innerHTML = `
+      <h1>Panduan ujian Kamis</h1>
+      <p class="muted">Ujiannya singkat, kira-kira satu soal, dengan materi dari satu bab yang sama. Yang dilatih di sini adalah langkah yang sama untuk semua soal, supaya kamu tidak perlu mengingat jawaban.</p>
+
+      <div class="kartu">
+        <h3>Rencana tiga hari</h3>
+        <ul class="daftar">
+          <li><b>Selasa (hari ini):</b> baca Penjelasan materi bagian 1–3, lalu Contoh 1 dan 2. Ikuti langkahnya pelan-pelan.</li>
+          <li><b>Rabu:</b> Contoh 3–5. Tutup layar, lalu tulis ulang tiap langkah di kertas tanpa melihat.</li>
+          <li><b>Kamis pagi (15 menit):</b> baca Kesalahan umum dan daftar periksa di bawah, lalu kerjakan satu contoh dari awal.</li>
+        </ul>
+      </div>
+
+      <div class="kartu">
+        <h3>Daftar periksa setiap soal</h3>
+        <p class="muted">Centang setiap langkah yang sudah kamu kuasai. Centang tersimpan di browser ini.</p>
+        ${DAFTAR_UJIAN.map((t, i) => `
+          <label class="cek-baris"><input type="checkbox" data-i="${i}" ${sudah.includes(i) ? 'checked' : ''}> ${t}</label>`).join('')}
+        <p class="muted" style="margin-top:.6rem"><b>${sudah.length}</b> dari ${DAFTAR_UJIAN.length} sudah dicentang.</p>
+      </div>
+
+      <div class="kartu">
+        <h3>Kesalahan yang paling sering</h3>
+        <ul class="daftar">${KESALAHAN.map((t) => `<li>${t}</li>`).join('')}</ul>
+      </div>
+
+      <div class="kartu">
+        <h3>Tipe soal dan contoh yang mirip</h3>
+        <ul class="daftar">
+          <li>Tegangan simpul dengan sumber tak-bebas → <a href="#/materi/contoh/node">Contoh 1</a></li>
+          <li>Arus mesh dengan dua loop → <a href="#/materi/contoh/mesh">Contoh 2</a></li>
+          <li>Thévenin dengan sumber tak-bebas → <a href="#/materi/contoh/thevenin">Contoh 3</a></li>
+          <li>Transformasi sumber → <a href="#/materi/contoh/transformasi">Contoh 4</a></li>
+          <li>Cabang paralel dan pembagi arus → <a href="#/materi/contoh/paralel">Contoh 5</a></li>
+          <li>Soal dengan satu sinus dan impedansi → <a href="#/materi/impedansi">Impedansi dan pembagi</a></li>
+        </ul>
+      </div>`;
+
+    host.querySelectorAll('input[type=checkbox]').forEach((el) => {
+      el.addEventListener('change', () => {
+        const i = Number(el.dataset.i);
+        const sekarang = cekBaca().filter((x) => x !== i);
+        if (el.checked) sekarang.push(i);
+        cekTulis(sekarang);
+        renderUjian(host);
+      });
+    });
+    math(host);
+  }
+
+  /* ---------- glosarium ---------- */
+  const GLOSARIUM = [
+    ['Fasor', 'Bilangan kompleks yang menyimpan amplitudo dan sudut fasa dari sinus dengan satu frekuensi tertentu.'],
+    ['Amplitudo (V_m)', 'Nilai puncak sinus. Nilai rms-nya adalah V_m dibagi √2.'],
+    ['Sudut fasa (φ)', 'Pergeseran sinus terhadap t = 0, dinyatakan dalam derajat.'],
+    ['Frekuensi sudut (ω)', 'Kecepatan sudut dalam rad/s. ω = 2πf.'],
+    ['Reaktansi (X)', 'Bagian khayal dari impedansi. X_L = ωL, X_C = −1/(ωC).'],
+    ['Impedansi (Z)', 'Perbandingan fasor tegangan terhadap fasor arus: Z = V/I. Bentuknya R + jX.'],
+    ['Admitansi (Y)', 'Kebalikan impedansi: Y = 1/Z. Dipakai saat menghitung paralel.'],
+    ['Simpul', 'Titik pertemuan dua atau lebih elemen.'],
+    ['Acuan', 'Simpul yang dianggap bertegangan nol. Biasanya rel bawah.'],
+    ['Loop dan mesh', 'Jalur tertutup dalam rangkaian. Mesh adalah loop yang tidak memuat loop lain di dalamnya.'],
+    ['KCL', 'Jumlah arus yang masuk ke sebuah simpul sama dengan jumlah yang keluar.'],
+    ['KVL', 'Jumlah tegangan dalam satu loop tertutup sama dengan nol.'],
+    ['Sumber tak-bebas', 'Sumber yang nilainya bergantung pada tegangan atau arus di bagian lain rangkaian.'],
+    ['Sumber uji', 'Sumber arus atau tegangan kecil yang dipasang di terminal untuk mengukur impedansi.'],
+    ['Thévenin', 'Rangkaian sederhana sumber tegangan seri impedansi yang setara dengan rangkaian asli dilihat dari dua terminal.'],
+    ['Norton', 'Rangkaian sederhana sumber arus paralel impedansi yang setara dengan rangkaian asli.'],
+  ];
+
+  function renderGlosarium(host) {
+    host.innerHTML = `
+      <h1>Glosarium</h1>
+      <p class="muted">Istilah yang sering muncul, dijelaskan singkat dengan kata-kata sendiri.</p>
+      <div class="kartu">
+        <dl class="glosarium">
+          ${GLOSARIUM.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}
+        </dl>
+      </div>`;
   }
 
   window.Materi = { render, PELAJARAN };

@@ -641,6 +641,9 @@
     if (e.key === 'ArrowLeft' && r.indeks > 0) location.hash = `#/soal/${encodeURIComponent(p.id)}/${r.indeks}`;
   });
 
+  // Dipakai oleh halaman contoh terbimbing: gambar statis rangkaian dengan label nilai
+  window.gambarRangkaian = (svg, p, statis) => mulaiAnimasi(p, svg, statis);
+
   render();
   pasangFokus();
 })();

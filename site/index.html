@@ -178,6 +178,13 @@
   .latihan .tombol { margin-top: .4rem; }
   .jawaban { margin-top: .6rem; padding: .6rem .8rem; background: var(--accent-wash, var(--ungu-100, #eef3f8)); border-radius: 6px; }
   .mono { font-family: ui-monospace, Consolas, monospace; }
+  .cek-baris { display: flex; gap: .55rem; align-items: flex-start; padding: .45rem 0; border-bottom: 1px solid var(--garis); cursor: pointer; font-size: .95rem; }
+  .cek-baris input { margin-top: .35rem; accent-color: var(--aksen); }
+  .cek-baris:last-of-type { border-bottom: 0; }
+  dl.glosarium { display: grid; grid-template-columns: max-content 1fr; gap: .5rem 1.2rem; margin: 0; }
+  dl.glosarium dt { font-weight: 700; color: var(--aksen); }
+  dl.glosarium dd { margin: 0; }
+  @media (max-width: 560px) { dl.glosarium { grid-template-columns: 1fr; } }
 
   /* Timer fokus */
   .fokus { display: flex; align-items: center; gap: .45rem; font-size: .85rem; }
@@ -230,6 +237,7 @@
 <script src="js/solver.js"></script>
 <script src="js/problems.js"></script>
 <script src="js/info.js"></script>
+<script src="js/contoh-data.js"></script>
 <script src="js/materi.js"></script>
 <script src="js/app.js"></script>
 </body>
