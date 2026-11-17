@@ -1,17 +1,23 @@
 /*
  * Data 14 soal Bab 9 (analisis fasor). Setiap soal berisi:
  *  - pos      : koordinat simpul untuk gambar (viewBox 600 x 400)
+ *  - elements : netlist sesuai gambar soal
  *  - analyze(): hitung hasil dengan Solver, mengembalikan daftar `outs`
+ *               (kind 'aux' = nilai antara, tidak ditampilkan di Hasil)
  *  - expect   : nilai kunci dari buku soal, dipakai untuk verifikasi
- *  - display(): kasus-kasus rangkaian untuk animasi (satu atau lebih frekuensi)
- *  - steps(o) : langkah pengerjaan, angka diisi dari hasil solver
- * Semua langkah dan penjelasan ditulis ulang dengan kata-kata sendiri.
+ *  - display(): kasus-kasus rangkaian untuk animasi
+ *  - steps(o) : langkah pengerjaan dalam notasi matematika (LaTeX di dalam $...$)
+ * Langkah dan penjelasan ditulis ulang dengan kata-kata sendiri.
  */
 const S = Solver;
-const { C, L, Cap, run, fmt } = S;
+const { C, L, Cap, run, fmt, tex: T } = S;
 const R = (x) => C.c(x, 0);       // resistansi real
 const JX = (x) => C.c(0, x);      // reaktansi j·x
 const PH = (r, d) => C.polar(r, d);
+const P = (z) => T.polar(z);      // bentuk polar untuk LaTeX
+const Rc = (z) => T.rect(z);      // bentuk rektangular untuk LaTeX
+const Tm = (z, w) => T.time(z, w);
+const mA = (z) => C.scale(1000, z);
 
 /* Helper untuk membuat keluaran hasil */
 function out(key, label, z, kind, unit, omega) {
@@ -43,22 +49,23 @@ const P1 = {
   expect: { Zab: C.c(25, 20) },
   display() { return [{ omega: null, elements: this.elements }]; },
   steps(o) {
+    const z2 = C.div(C.mul(R(10), JX(-20)), C.c(10, -20));
+    const z3 = C.div(C.mul(C.c(8, 16), C.c(40, -80)), C.c(48, -64));
     return [
-      { j: 'Tandai simpul dan cari yang seri', t: 'Kawat dari a sampai simpul atas tidak bercabang, jadi 5 Ω dan j8 Ω langsung seri. Impedansi seri hanya menjumlahkan nilainya.' },
-      { j: 'Sederhanakan cabang kanan', t: 'Di kanan atas ada 10 Ω dan −j20 Ω yang diparalelkan. Hasilnya ' + fmt.rect(PH(0, 0).re === 0 ? C.div(C.mul(C.c(10), C.c(0, -20)), C.c(10, -20)) : null) + ' Ω.' },
-      { j: 'Sederhanakan cabang kanan bawah', t: 'Cabang (8 + j16) paralel dengan (40 − j80). Kawat di tengah menyatukan kedua cabang ini, jadi keduanya paralel terhadap terminal b.' },
-      { j: 'Jumlahkan semua bagian seri', t: 'Zab = (5 + j8) + (8 − j4) + (12 + j16) = ' + fmt.rect(o.Zab.z) + ' Ω.' },
-      { j: 'Ubah ke bentuk polar', t: 'Besar |Zab| = ' + fmt.polar(o.Zab.z).split(' ∠ ')[0] + ' Ω dan sudut θ = ' + fmt.polar(o.Zab.z).split(' ∠ ')[1] + '. Karena bagian nyata dan khayalnya positif, sudut ada di kuadran I.' },
+      { j: 'Cari bagian yang seri', t: `Kawat dari $a$ ke simpul atas tidak bercabang. Jadi $5\\,\\Omega$ dan $j8\\,\\Omega$ langsung seri: $Z_1 = 5 + j8\\ \\Omega$.` },
+      { j: 'Paralelkan cabang kanan atas', t: `$10\\,\\Omega$ paralel $-j20\\,\\Omega$:\n$$Z_2 = \\dfrac{(10)(-j20)}{10 - j20} = ${Rc(z2)}\\ \\Omega$$` },
+      { j: 'Paralelkan cabang kanan bawah', t: `Kawat tengah menyatukan dua cabang yang keluar dari simpul yang sama. $(8+j16)\\parallel(40-j80)$:\n$$Z_3 = \\dfrac{(8+j16)(40-j80)}{(8+j16)+(40-j80)} = ${Rc(z3)}\\ \\Omega$$` },
+      { j: 'Jumlahkan semua yang seri', t: `$$Z_{ab} = (5+j8) + (8-j4) + (12+j16) = ${Rc(o.Zab.z)}\\ \\Omega$$` },
+      { j: 'Ubah ke polar', t: `$$|Z_{ab}| = \\sqrt{25^2 + 20^2} = ${T.num(C.abs(o.Zab.z))}\\ \\Omega,\\qquad \\theta = \\tan^{-1}\\dfrac{20}{25} = ${T.num(C.deg(o.Zab.z))}^\\circ$$` },
     ];
   },
   pelajaran: [
-    'Gabungkan dulu cabang yang paling jauh dari terminal, lalu mundur ke a dan b.',
+    'Gabungkan dulu cabang yang paling jauh dari terminal, lalu mundur ke $a$ dan $b$.',
     'Kawat tanpa komponen berarti dua simpul sama. Tandai itu sebelum menghitung.',
-    'Soal yang hanya berisi R, L, C tanpa sumber cukup dikerjakan dengan reduksi seri–paralel.',
   ],
   jebakan: [
-    'Tanda kapasitor selalu negatif pada bagian khayal: Z_C = 1/(jωC) = −j/(ωC).',
-    'Jangan menggabungkan cabang yang tidak seri atau paralel secara murni. Periksa dulu kawat yang menyatukan simpul.',
+    'Tanda kapasitor selalu negatif pada bagian khayal: $Z_C = \\dfrac{1}{j\\omega C} = -\\dfrac{j}{\\omega C}$.',
+    'Periksa dulu kawat yang menyatukan simpul sebelum memparalelkan apa pun.',
   ],
 };
 
@@ -84,21 +91,21 @@ const P2 = {
   expect: { io: PH(0.016, 53.13) },
   display() { return [{ omega: this.omega, elements: this.elements(this.omega) }]; },
   steps(o) {
-    const z = C.c(3000, 1000 - 5000);
+    const z = C.c(3000, -4000);
     return [
-      { j: 'Tentukan frekuensi sudut', t: 'Dari sumber, ω = 2000 rad/s. Semua elemen dihitung pada frekuensi ini.' },
-      { j: 'Hitung reaktansi', t: 'X_L = ωL = 2000 × 0,5 = 1000 Ω. X_C = −1/(ωC) = −1/(2000 × 100×10⁻⁹) = −5000 Ω.' },
-      { j: 'Jumlahkan impedansi seri', t: 'Karena satu loop, semua elemen seri: Z = 3000 + j1000 − j5000 = ' + fmt.rect(z) + ' Ω.' },
-      { j: 'Hitung arus dengan Hukum Ohm fasor', t: 'I = V/Z = 80∠0° / (' + fmt.polar(z) + ') = ' + fmt.polar(o.io.z) + ' A.' },
-      { j: 'Kembalikan ke bentuk waktu', t: 'Dengan konvensi kosinus: ' + fmt.time(C.scale(1000, o.io.z), 2000, 2, 'i_o(t) = ') + ' mA.' },
+      { j: 'Tentukan frekuensi sudut', t: `Dari sumber, $\\omega = 2000$ rad/s. Semua elemen dihitung pada frekuensi ini.` },
+      { j: 'Hitung reaktansi', t: `$$X_L = \\omega L = 2000 \\cdot 0{,}5 = 1000\\ \\Omega$$\n$$X_C = -\\dfrac{1}{\\omega C} = -\\dfrac{1}{2000 \\cdot 100\\cdot 10^{-9}} = -5000\\ \\Omega$$` },
+      { j: 'Jumlahkan impedansi seri', t: `Satu loop berarti semua elemen seri: $$Z = 3000 + j1000 - j5000 = ${Rc(z)}\\ \\Omega$$` },
+      { j: 'Hukum Ohm fasor', t: `$$\\mathbf{I}_o = \\dfrac{\\mathbf{V}_s}{Z} = \\dfrac{80\\angle 0^\\circ}{${P(z)}\\ \\Omega} = ${P(o.io.z)}\\ \\text{A}$$` },
+      { j: 'Kembali ke waktu', t: `$$i_o(t) = ${Tm(mA(o.io.z), 2000)}\\ \\text{mA}$$` },
     ];
   },
   pelajaran: [
-    'Pada loop tunggal, cukup satu pembagian V/Z. Tidak perlu persamaan simpul atau loop tambahan.',
-    'Bentuk jawaban mengikuti konvensi sumber. Jika sumber berbentuk sinus, geser sudut −90° sebelum mengubah ke fasor.',
+    'Pada loop tunggal cukup satu pembagian $\\mathbf{V}/Z$. Tidak perlu persamaan simpul atau loop tambahan.',
+    'Sumber sinus harus diubah ke kosinus lebih dulu. Itu aturan baku dosen, bukan opsional.',
   ],
   jebakan: [
-    'Kapasitor menghasilkan bagian khayal negatif. Menulis Z_C = +j5000 membalik tanda sudut jawaban.',
+    'Kapasitor menghasilkan bagian khayal negatif. Menulis $Z_C = +j5000$ membalik tanda sudut jawaban.',
     'Jawaban bentuk waktu harus fungsi waktu, bukan fasor saja.',
   ],
 };
@@ -107,42 +114,51 @@ const P2 = {
 const P3 = {
   id: 'P9.30', judul: 'Rangkaian R–L–C campuran, cari io(t) untuk sumber sinus',
   tipe: 'Seri–paralel, sumber sinus', omega: 4000, ground: 'g',
-  ringkas: 'Sumber 25 sin(4000t) V. Cari io(t), arus dari sumber yang melewati resistor 5 Ω paling atas.',
-  pos: { p: [60, 80], A: [200, 80], B: [360, 80], g: [60, 320] },
+  ringkas: 'Sumber 25 sin(4000t) V. Cari io(t), yaitu arus dari sumber yang melewati resistor 5 Ω paling atas.',
+  // Susunan gambar mengikuti soal: 5 Ω, lalu simpul A (2,5 mH menggantung),
+  // 10 Ω, lalu simpul B (20 Ω dan 12,5 µF paralel ke bawah).
+  pos: { p: [60, 80], A: [220, 80], B: [380, 80], g: [60, 340] },
   elements(w) {
     return [
       { id: 'Vs', kind: 'V', a: 'p', b: 'g', E: PH(25, -90), label: 'vs = 25 sin 4000t' },
       { id: 'R5', kind: 'Z', a: 'p', b: 'A', z: R(5), label: '5 Ω' },
-      { id: 'L25m', kind: 'Z', a: 'A', b: 'g', z: L(2.5e-3, w), path: [[200, 320]], label: '2,5 mH' },
+      { id: 'L25m', kind: 'Z', a: 'A', b: 'g', z: L(2.5e-3, w), path: [[220, 340]], label: '2,5 mH' },
       { id: 'R10', kind: 'Z', a: 'A', b: 'B', z: R(10), label: '10 Ω' },
-      { id: 'R20', kind: 'Z', a: 'B', b: 'g', z: R(20), path: [[360, 320]], label: '20 Ω' },
-      { id: 'C125', kind: 'Z', a: 'B', b: 'g', z: Cap(12.5e-6, w), path: [[460, 80], [460, 320]], label: '12,5 µF' },
+      { id: 'R20', kind: 'Z', a: 'B', b: 'g', z: R(20), path: [[380, 340]], label: '20 Ω' },
+      { id: 'C125', kind: 'Z', a: 'B', b: 'g', z: Cap(12.5e-6, w), path: [[480, 80], [480, 340]], label: '12,5 µF' },
     ];
   },
   analyze() {
     const w = this.omega;
     const s = run(this.elements(w), this.ground);
-    return [out('io', 'i_o', s.cur('R5'), 'phasor', 'A', w)];
+    return [
+      out('io', 'i_o', s.cur('R5'), 'phasor', 'A', w),
+      out('ZT', 'Z_T', C.add(R(5), C.div(C.mul(JX(10), C.add(R(10), C.div(C.mul(R(20), JX(-20)), C.add(R(20), JX(-20))))), C.add(JX(10), C.add(R(10), C.div(C.mul(R(20), JX(-20)), C.add(R(20), JX(-20))))))), 'aux', 'Ω', w),
+    ];
   },
   expect: { io: PH(1.77, -135) },
   display() { return [{ omega: this.omega, elements: this.elements(this.omega) }]; },
   steps(o) {
+    const z1 = C.div(C.mul(R(20), JX(-20)), C.add(R(20), JX(-20)));   // 20 ∥ (−j20)
+    const z2 = C.add(R(10), z1);                                      // 10 + Z1
+    const z3 = C.div(C.mul(JX(10), z2), C.add(JX(10), z2));           // j10 ∥ Z2
     return [
-      { j: 'Ubah sinus menjadi kosinus', t: 'sin θ = cos(θ − 90°), jadi vs = 25 cos(4000t − 90°). Fasor sumbernya 25∠−90° V. Jangan lupa langkah ini, karena sumber sinus sering menjebak.' },
-      { j: 'Hitung reaktansi', t: 'X_L = 4000 × 2,5×10⁻³ = 10 Ω, jadi j10. X_C = −1/(4000 × 12,5×10⁻⁶) = −20 Ω, jadi −j20.' },
-      { j: 'Reduksi dari kanan', t: 'Di kanan ada 20 Ω paralel −j20 Ω. Hasilnya 10 − j10 Ω. Tambahkan 10 Ω, lalu paralelkan dengan j10 Ω.' },
-      { j: 'Impedansi total', t: 'Impedansi total dari sumber: Z_T = 5 + Z_paralel = 10 + j10 Ω = ' + fmt.polar(C.c(10, 10)) + ' Ω.' },
-      { j: 'Arus sumber', t: 'I_o = V_s / Z_T = (25∠−90°) / (10 + j10) = ' + fmt.polar(o.io.z) + ' A.' },
-      { j: 'Bentuk waktu', t: 'i_o(t) = ' + fmt.time(o.io.z, 4000, 2, '') + ' A.' },
+      { j: 'Ubah sinus menjadi kosinus', t: `$\\sin\\theta = \\cos(\\theta - 90^\\circ)$, jadi $$v_s = 25\\cos(4000t - 90^\\circ)\\ \\text{V}\\qquad\\Rightarrow\\qquad \\mathbf{V}_s = 25\\angle -90^\\circ = -j25\\ \\text{V}$$` },
+      { j: 'Hitung reaktansi', t: `$$X_L = \\omega L = 4000 \\cdot 2{,}5\\cdot 10^{-3} = 10\\ \\Omega \\;\\Rightarrow\\; j10\\ \\Omega$$\n$$X_C = -\\dfrac{1}{\\omega C} = -\\dfrac{1}{4000 \\cdot 12{,}5\\cdot 10^{-6}} = -20\\ \\Omega \\;\\Rightarrow\\; -j20\\ \\Omega$$` },
+      { j: 'Paralelkan 20 Ω dengan kapasitor', t: `$$Z_1 = 20 \\parallel (-j20) = \\dfrac{(20)(-j20)}{20 - j20} = ${Rc(z1)}\\ \\Omega$$` },
+      { j: 'Tambahkan 10 Ω, lalu paralelkan dengan induktor', t: `$$Z_2 = 10 + Z_1 = ${Rc(z2)}\\ \\Omega$$\n$$Z_3 = j10 \\parallel Z_2 = \\dfrac{(j10)(${Rc(z2)})}{j10 + ${Rc(z2)}} = ${Rc(z3)}\\ \\Omega$$` },
+      { j: 'Impedansi total', t: `Resistor 5 Ω seri dengan sisanya: $$Z_T = 5 + Z_3 = ${Rc(C.add(R(5), z3))}\\ \\Omega = ${P(C.add(R(5), z3))}\\ \\Omega$$` },
+      { j: 'Arus sumber', t: `$$\\mathbf{I}_o = \\dfrac{\\mathbf{V}_s}{Z_T} = \\dfrac{25\\angle -90^\\circ}{${P(C.add(R(5), z3))}} = ${P(o.io.z)}\\ \\text{A}$$` },
+      { j: 'Kembali ke waktu', t: `$$i_o(t) = ${Tm(o.io.z, 4000)}\\ \\text{A}$$` },
     ];
   },
   pelajaran: [
-    'Sumber sinus harus diubah ke kosinus lebih dulu. Ini aturan dasar, bukan trik tambahan.',
-    'Reduksi dari cabang yang paling jauh. Di sini itu cabang kanan, dan 5 Ω langsung seri dengan sisanya.',
+    'Sumber sinus harus diubah ke kosinus lebih dulu. Ini aturan baku, bukan trik tambahan.',
+    'Reduksi dari cabang yang paling jauh. Di sini itu kapasitor dan $20\\,\\Omega$, lalu $10\\,\\Omega$, baru induktor.',
   ],
   jebakan: [
-    'Jika kalkulator menunjukkan −135° dan kamu lupa geser fasor, hasil akhirnya salah 90°.',
-    'Periksa kuadran setelah mengubah ke polar: tangen invers tidak tahu kuadran.',
+    'Jika kalkulator menunjukkan $-135^\\circ$ dan kamu lupa menggeser fasor, hasil akhirnya salah $90^\\circ$.',
+    'Periksa kuadran setelah mengubah ke polar: $\\tan^{-1}$ tidak tahu kuadran.',
   ],
 };
 
@@ -165,7 +181,7 @@ const P4 = {
     const w = this.omega;
     const s = run(this.elements(w), this.ground);
     const vo = s.v('B');
-    const dt = (C.deg(vo) * Math.PI) / 180 / w; // selisih waktu dari fase
+    const dt = ((C.deg(vo) * Math.PI) / 180) / w; // selisih waktu dari fase
     return [
       out('vo', 'v_o', vo, 'phasor', 'V', w),
       out('dt', 'Δt', C.c(dt * 1e6, 0), 'value', 'µs', w),
@@ -175,20 +191,21 @@ const P4 = {
   display() { return [{ omega: this.omega, elements: this.elements(this.omega) }]; },
   steps(o) {
     return [
-      { j: 'Tentukan ω dan reaktansi', t: 'ω = 50000 rad/s. X_L = ωL = 50000 × 4×10⁻³ = 200 Ω (j200). X_C = −1/(50000 × 80×10⁻⁹) = −250 Ω (−j250).' },
-      { j: 'Ubah sumber ke fasor', t: 'ig = 25 cos(50000t) mA berarti I_g = 25∠0° mA = 0,025∠0° A. Sumber arus ini tidak perlu diubah ke sumber tegangan.' },
-      { j: 'Pasang sumber dan gunakan tegangan simpul', t: 'Simpul A dan B adalah dua simpul tak diketahui. Dari A keluar j200 ke tanah dan 100 Ω ke B. Dari B keluar −j250 Ω dan 500 Ω ke tanah.' },
-      { j: 'Hitung vo', t: 'Hasil dari analisis simpul: V_o = ' + fmt.polar(o.vo.z) + ' V. Bentuk waktu: ' + fmt.time(o.vo.z, 50000, 2, 'v_o') + ' V.' },
-      { j: 'Hitung selisih waktu', t: 'Sudut ' + C.deg(o.vo.z).toFixed(2) + '° diubah ke radian lalu dibagi ω. Hasilnya Δt ≈ ' + o.dt.z.re.toFixed(2) + ' µs. Dalam kasus ini vo mendahului ig.' },
+      { j: 'Tentukan ω dan reaktansi', t: `$\\omega = 50000$ rad/s.\n$$X_L = \\omega L = 50000 \\cdot 4\\cdot 10^{-3} = 200\\ \\Omega \\;\\Rightarrow\\; j200\\ \\Omega$$\n$$X_C = -\\dfrac{1}{50000 \\cdot 80\\cdot 10^{-9}} = -250\\ \\Omega \\;\\Rightarrow\\; -j250\\ \\Omega$$` },
+      { j: 'Sumber arus ke fasor', t: `$i_g = 25\\cos(50000t)$ mA berarti $\\mathbf{I}_g = 25\\angle 0^\\circ$ mA $= 0{,}025\\angle 0^\\circ$ A. Sumber arus tidak perlu diubah.` },
+      { j: 'Tegangan simpul', t: `Simpul $A$ dan $B$ belum diketahui. Dari $A$ keluar $j200\\,\\Omega$ ke acuan dan $100\\,\\Omega$ ke $B$. Dari $B$ keluar $-j250\\,\\Omega$ dan $500\\,\\Omega$ ke acuan.` },
+      { j: 'Hasil fasor v_o', t: `$$\\mathbf{V}_o = ${P(o.vo.z)}\\ \\text{V}$$` },
+      { j: 'Bentuk waktu', t: `$$v_o(t) = ${Tm(o.vo.z, 50000)}\\ \\text{V}$$` },
+      { j: 'Selisih waktu', t: `Ubah sudut ke radian lalu bagi $\\omega$:\n$$\\Delta t = \\dfrac{\\theta_{\\text{rad}}}{\\omega} = \\dfrac{${T.num(C.deg(o.vo.z))}^\\circ \\cdot \\frac{\\pi}{180}}{50000} = ${T.num(o.dt.z.re)}\\ \\mu\\text{s}$$` },
     ];
   },
   pelajaran: [
-    'Sudut fase dalam radian dibagi ω memberi selisih waktu. Jangan membagi sudut derajat langsung.',
+    'Sudut fase dalam radian dibagi $\\omega$ memberi selisih waktu. Jangan membagi sudut derajat langsung.',
     'Sumber arus dengan dua simpul tak diketahui cocok untuk analisis simpul.',
   ],
   jebakan: [
-    'Membagi 26,57° dengan 50000 langsung memberi hasil salah satuan. Ubah ke radian dulu.',
-    'Pembulatan sudut di tengah perhitungan bisa menggeser Δt. Simpan angka penuh sampai akhir.',
+    'Membagi $26{,}57^\\circ$ langsung dengan $50000$ memberi satuan yang salah. Ubah ke radian dulu.',
+    'Pembulatan sudut di tengah perhitungan menggeser $\\Delta t$. Simpan angka penuh sampai akhir.',
   ],
 };
 
@@ -220,28 +237,32 @@ const P5 = {
     const VL = s.v('L');
     const Iz = s.J('VF');
     const Z = C.div(C.sub(VL, V1), Iz);
-    return [out('Z', 'Z', Z, 'imp', 'Ω', null)];
+    return [
+      out('Z', 'Z', Z, 'imp', 'Ω', null),
+      out('V2', 'V_2', s.v('V2'), 'aux', 'V', null),
+      out('Iz', 'I_Z', Iz, 'aux', 'A', null),
+    ];
   },
   expect: { Z: C.c(2, 2) },
   display() {
-    const o = this.analyze()[0];
-    return [{ omega: null, elements: this.elements(o.z) }];
+    const z = this.analyze()[0].z;
+    return [{ omega: null, elements: this.elements(z) }];
   },
   steps(o) {
     return [
-      { j: 'Pilih simpul acuan', t: 'Pilih rel bawah sebagai acuan. Sumber tegangan Vg menempel pada simpul kiri atas, jadi V_L sudah diketahui.' },
-      { j: 'Tentukan V1 dari soal', t: 'V1 diberikan: 140 + j30 V. Dengan V1 diketahui, kita bisa mencari arus lain tanpa menyelesaikan seluruh jaringan.' },
-      { j: 'Cari tegangan V2 lewat KCL', t: 'Dari simpul V2 ada cabang 20 Ω, j5 Ω, dan 12 Ω + j16 Ω. Tulis KCL di V2 untuk mendapat V2.' },
-      { j: 'Hitung arus lewat Z', t: 'KCL di V1 memberi arus yang masuk ke V1 lewat Z, yaitu I_Z = ' + fmt.rect(o.Z.z) + ' A dengan arah dari simpul kiri ke V1 (kita hitung dari sisa cabang).' },
-      { j: 'Hitung impedansi', t: 'Z = (V_L − V1) / I_Z. Hasilnya Z = ' + fmt.rect(o.Z.z) + ' Ω = ' + fmt.polar(o.Z.z) + ' Ω.' },
+      { j: 'Pilih acuan', t: `Rel bawah sebagai acuan. Sumber $\\mathbf{V}_g$ menempel pada simpul kiri atas, jadi $\\mathbf{V}_L = 100 - j50$ V sudah diketahui.` },
+      { j: 'Tegangan simpul V_1 sudah diberikan', t: `$\\mathbf{V}_1 = 140 + j30$ V. Dengan $\\mathbf{V}_1$ diketahui, kita tidak perlu menyelesaikan seluruh jaringan.` },
+      { j: 'KCL di V_2', t: `Dari $V_2$ ada cabang $20\\,\\Omega$, $j5\\,\\Omega$, dan $12 + j16\\,\\Omega$. Tulis KCL di $V_2$, lalu selesaikan:\n$$\\mathbf{V}_2 = ${Rc(o.V2.z)}\\ \\text{V}$$` },
+      { j: 'Arus lewat Z dari KCL di V_1', t: `Arus yang masuk ke $V_1$ lewat $Z$ adalah $$\\mathbf{I}_Z = ${Rc(o.Iz.z)}\\ \\text{A}$$` },
+      { j: 'Hitung impedansi', t: `$$Z = \\dfrac{\\mathbf{V}_L - \\mathbf{V}_1}{\\mathbf{I}_Z} = \\dfrac{-40 - j80}{${Rc(o.Iz.z)}} = ${Rc(o.Z.z)}\\ \\Omega = ${P(o.Z.z)}\\ \\Omega$$` },
     ];
   },
   pelajaran: [
     'Jika satu tegangan simpul diberikan, kamu bisa menyelesaikan bagian jaringan tanpa menyusun semua persamaan.',
-    'Impedansi tak diketahui dihitung dari V/I, dan arusnya didapat dari KCL di simpul yang terhubung.',
+    'Impedansi tak diketahui dihitung dari $V/I$. Arusnya didapat dari KCL di simpul yang terhubung.',
   ],
   jebakan: [
-    'Arah I_Z harus konsisten dengan arah V_Z = V_L − V1. Kalau dibalik, Z juga ikut terbalik tanda.',
+    'Arah $\\mathbf{I}_Z$ harus konsisten dengan arah $\\mathbf{V}_Z = \\mathbf{V}_L - \\mathbf{V}_1$. Kalau dibalik, tanda $Z$ ikut terbalik.',
   ],
 };
 
@@ -277,12 +298,13 @@ const P6 = {
   expect: { IN: PH(3, 90), ZN: C.c(12, -24) },
   display() { return [{ omega: null, elements: this.elements(true) }]; },
   steps(o) {
+    const yPar = C.add(R(12), JX(6));
     return [
-      { j: 'Ubah sumber tegangan menjadi sumber arus', t: 'Sumber 180∠90° V seri dengan j30 Ω diubah menjadi sumber arus 180∠90° / j30 = 6∠0° A paralel dengan j30 Ω. Arah sumber mengikuti tanda terminal.' },
-      { j: 'Gabungkan dua impedansi paralel', t: 'Setelah transformasi, j30 Ω paralel dengan 15 Ω. Hasilnya 12 + j6 Ω. Lanjutkan transformasi sampai bentuk Norton tercapai.' },
-      { j: 'Hitung Isc', t: 'Hubung singkat a–b. Arus yang mengalir melewati hubungan singkat ini adalah I_N = ' + fmt.polar(o.IN.z) + ' A.' },
-      { j: 'Hitung impedansi Norton', t: 'Matikan sumber tegangan (jadi hubung singkat), lalu ukur impedansi di a–b. Z_N = ' + fmt.rect(o.ZN.z) + ' Ω.' },
-      { j: 'Tulis hasil', t: 'Ekuivalen Norton: I_N = ' + fmt.polar(o.IN.z) + ' A paralel Z_N = ' + fmt.rect(o.ZN.z) + ' Ω.' },
+      { j: 'Transformasi sumber pertama', t: `Sumber $180\\angle 90^\\circ$ V seri dengan $j30\\,\\Omega$ diubah menjadi sumber arus:$$\\dfrac{180\\angle 90^\\circ}{j30} = 6\\angle 0^\\circ\\ \\text{A}\\quad\\text{paralel dengan}\\quad j30\\,\\Omega$$` },
+      { j: 'Gabungkan impedansi paralel', t: `Setelah transformasi, $j30\\,\\Omega$ paralel $15\\,\\Omega$:\n$$\\dfrac{(j30)(15)}{15 + j30} = ${Rc(yPar)}\\ \\Omega$$` },
+      { j: 'Arus Norton', t: `Dengan $a$–$b$ dihubung singkat, arus yang mengalir melewatinya adalah $$\\mathbf{I}_N = ${P(o.IN.z)}\\ \\text{A}$$` },
+      { j: 'Impedansi Norton', t: `Sumber tegangan dimatikan, lalu ukur impedansi di $a$–$b$:$$Z_N = ${Rc(o.ZN.z)}\\ \\Omega$$` },
+      { j: 'Tulis ekuivalen', t: `Ekuivalen Norton: $\\mathbf{I}_N = ${P(o.IN.z)}$ A paralel $Z_N = ${Rc(o.ZN.z)}\\ \\Omega$.` },
     ];
   },
   pelajaran: [
@@ -290,8 +312,8 @@ const P6 = {
     'Impedansi yang seri dengan terminal harus digabung lebih dulu sebelum transformasi dilanjutkan.',
   ],
   jebakan: [
-    'Jangan memparalelkan −j30 Ω dengan cabang lain sebelum mentransformasi sumber yang di dekatnya.',
-    'Bentuk Norton memang berisi I_N dan Z_N. Cek juga dengan Thévenin untuk kepastian.',
+    'Jangan memparalelkan $-j30\\,\\Omega$ dengan cabang lain sebelum mentransformasi sumber yang di dekatnya.',
+    'Bentuk Norton memuat $I_N$ dan $Z_N$. Cek juga dengan Thévenin untuk kepastian.',
   ],
 };
 
@@ -299,7 +321,7 @@ const P6 = {
 const P7 = {
   id: 'P9.49', judul: 'Ekuivalen Thévenin dengan sumber tak-bebas',
   tipe: 'Thévenin dengan sumber tak-bebas', omega: null, ground: 'g',
-  ringkas: 'Sumber tak-bebas 0,03·Vo ada di rangkaian, jadi tidak boleh dimatikan. Cari VTh dan ZTh di terminal a–b.',
+  ringkas: 'Sumber tak-bebas $0{,}03\\,V_o$ ada di rangkaian, jadi tidak boleh dimatikan. Cari $V_{Th}$ dan $Z_{Th}$ di terminal $a$–$b$.',
   pos: { p: [60, 80], n1: [200, 80], X: [320, 80], ta: [440, 80], g: [60, 320] },
   elements() {
     return [
@@ -328,19 +350,19 @@ const P7 = {
   display() { return [{ omega: null, elements: this.elements() }]; },
   steps(o) {
     return [
-      { j: 'Jangan matikan sumber tak-bebas', t: 'Sumber 0,03·Vo bergantung pada tegangan di terminal, jadi tetap dipertahankan. Hanya sumber bebas 250 V yang boleh dimatikan saat mencari Z langsung.' },
-      { j: 'Cari V_Th (terminal terbuka)', t: 'Dengan a–b terbuka, V_Th = V_a = ' + fmt.polar(o.Vth.z) + ' V = ' + fmt.rect(o.Vth.z) + ' V.' },
-      { j: 'Cari I_sc (a–b dihubung singkat)', t: 'Dengan a dan g terhubung singkat, tegangan di terminal menjadi nol. Sumber tak-bebas ikut nol, sehingga I_sc = ' + fmt.rect(o.Isc.z) + ' A.' },
-      { j: 'Hitung Z_Th', t: 'Z_Th = V_Th / I_sc = ' + fmt.rect(o.Zth.z) + ' Ω.' },
-      { j: 'Gambar ekuivalen', t: 'Rangkaian Thévenin: sumber tegangan ' + fmt.rect(o.Vth.z) + ' V seri Z_Th = ' + fmt.rect(o.Zth.z) + ' Ω.' },
+      { j: 'Jangan matikan sumber tak-bebas', t: `Sumber $0{,}03\\,V_o$ bergantung pada tegangan di terminal, jadi tetap dipertahankan. Hanya sumber bebas $250$ V yang boleh dimatikan saat mencari $Z$ secara langsung.` },
+      { j: 'V_Th dengan terminal terbuka', t: `$$\\mathbf{V}_{Th} = \\mathbf{V}_a = ${P(o.Vth.z)}\\ \\text{V} = ${Rc(o.Vth.z)}\\ \\text{V}$$` },
+      { j: 'I_sc dengan a–b dihubung singkat', t: `Dengan $a$ dan acuan terhubung singkat, tegangan terminal nol. Sumber tak-bebas ikut nol, sehingga$$\\mathbf{I}_{sc} = ${Rc(o.Isc.z)}\\ \\text{A}$$` },
+      { j: 'Hitung Z_Th', t: `$$Z_{Th} = \\dfrac{\\mathbf{V}_{Th}}{\\mathbf{I}_{sc}} = ${Rc(o.Zth.z)}\\ \\Omega$$` },
+      { j: 'Ekuivalen Thévenin', t: `Sumber tegangan $${Rc(o.Vth.z)}$ V seri $Z_{Th} = ${Rc(o.Zth.z)}\\ \\Omega$.` },
     ];
   },
   pelajaran: [
-    'Dengan sumber tak-bebas, Z_Th tidak selalu bisa langsung dihitung dengan mematikan sumber. Pakai V_Th / I_sc.',
-    'Saat a–b dihubung singkat, variabel kendali sering menjadi nol. Itu justru mempermudah.',
+    'Dengan sumber tak-bebas, $Z_{Th}$ tidak selalu bisa langsung dihitung dengan mematikan sumber. Pakai $V_{Th}/I_{sc}$.',
+    'Saat $a$–$b$ dihubung singkat, variabel kendali sering menjadi nol. Itu justru mempermudah.',
   ],
   jebakan: [
-    'Mematikan sumber tak-bebas adalah kesalahan umum. Sumbernya hanya mati jika dikontrol oleh nilai yang juga nol.',
+    'Mematikan sumber tak-bebas adalah kesalahan umum. Sumber itu hanya ikut mati jika variabel kendalinya juga nol.',
   ],
 };
 
@@ -348,7 +370,7 @@ const P7 = {
 const P8 = {
   id: 'P9.52', judul: 'Zab dengan sumber tak-bebas (metode sumber uji)',
   tipe: 'Impedansi dengan sumber tak-bebas', omega: 100000, ground: 'g',
-  ringkas: 'Rangkaian bekerja pada ω = 100 krad/s dan memuat sumber CCVS 5·iΔ. Cari Zab dengan menaruh sumber uji 1 A di terminal a–b.',
+  ringkas: 'Rangkaian bekerja pada $\\omega = 100$ krad/s dan memuat sumber CCVS $5\\,i_\\Delta$. Cari $Z_{ab}$ dengan sumber uji 1 A di terminal $a$–$b$.',
   pos: { ta: [60, 80], m: [200, 80], R: [360, 80], g: [360, 320] },
   elements() {
     return [
@@ -367,20 +389,20 @@ const P8 = {
   display() { return [{ omega: this.omega, elements: this.elements() }]; },
   steps(o) {
     return [
-      { j: 'Tentukan ω dan reaktansi', t: 'ω = 10⁵ rad/s. X_C = −1/(10⁵ × 400×10⁻⁹) = −25 Ω. X_L = 10⁵ × 600×10⁻⁶ = 60 Ω.' },
-      { j: 'Ada sumber tak-bebas, jadi pakai sumber uji', t: 'Seri–paralel tidak sah di sini karena sumber 5·iΔ menghubungkan cabang lain. Pasang sumber uji 1 A di a–b.' },
-      { j: 'Tulis arus cabang 30 Ω', t: 'iΔ berarah ke atas di 30 Ω. Karena itu iΔ = (V_g − V_R)/30. Hubungan ini dipakai di KCL dan KVL.' },
-      { j: 'Tulis KCL dan KVL', t: 'KCL di simpul R memberi V_R dalam V_ta. KVL dari a melewati −j25 dan 5·iΔ memberi V_ta.' },
-      { j: 'Hasil Zab', t: 'Z_ab = V_ta / 1 A = ' + fmt.rect(o.Zab.z) + ' Ω = ' + fmt.polar(o.Zab.z) + ' Ω.' },
+      { j: 'Reaktansi pada ω = 10⁵ rad/s', t: `$$X_C = -\\dfrac{1}{10^5 \\cdot 400\\cdot 10^{-9}} = -25\\ \\Omega\\qquad X_L = 10^5 \\cdot 600\\cdot 10^{-6} = 60\\ \\Omega$$` },
+      { j: 'Pakai sumber uji', t: `Ada sumber tak-bebas $5\\,i_\\Delta$ yang menghubungkan cabang lain, jadi seri–paralel tidak sah. Pasang sumber uji $1$ A di $a$–$b$.` },
+      { j: 'Arus cabang 30 Ω', t: `$i_\\Delta$ berarah ke atas pada $30\\,\\Omega$, jadi $$i_\\Delta = \\dfrac{V_g - V_R}{30} = \\dfrac{-V_R}{30}$$` },
+      { j: 'Persamaan simpul dan loop', t: `KCL di simpul $R$ dan KVL dari $a$ melewati $-j25$ dan $5\\,i_\\Delta$ memberi hubungan antara $V_{ta}$ dan $V_R$. Selesaikan keduanya.` },
+      { j: 'Hasil Z_ab', t: `$$Z_{ab} = \\dfrac{\\mathbf{V}_{ta}}{1\\ \\text{A}} = ${Rc(o.Zab.z)}\\ \\Omega = ${P(o.Zab.z)}\\ \\Omega$$` },
     ];
   },
   pelajaran: [
-    'Sumber tak-bebas memutuskan bahwa seri–paralel tidak sah. Ketika ada sumber semacam ini, pakai sumber uji.',
-    'Arah sumber tak-bebas dan tanda tegangannya harus dibaca dari gambar, bukan ditebak.',
+    'Sumber tak-bebas membuat seri–paralel tidak sah. Ketika ada sumber semacam ini, pakai sumber uji.',
+    'Arah sumber tak-bebas dan tandanya harus dibaca dari gambar, bukan ditebak.',
   ],
   jebakan: [
     'Mematikan sumber tak-bebas sama dengan membuang bagian yang harus dihitung. Jangan lakukan ini.',
-    'Periksa satuan: 5·iΔ punya satuan volt karena konstanta 5 bersatuan Ω.',
+    'Periksa satuan: $5\\,i_\\Delta$ bersatuan volt karena konstanta $5$ bersatuan Ω.',
   ],
 };
 
@@ -388,7 +410,7 @@ const P8 = {
 const P9 = {
   id: 'P9.54', judul: 'Node-voltage dua simpul, cari Vo',
   tipe: 'Node-voltage (dua simpul)', omega: null, ground: 'g',
-  ringkas: 'Sumber 240 V menempel pada rel bawah. Gunakan dua persamaan simpul untuk mencari Vo.',
+  ringkas: 'Sumber 240 V menempel pada rel bawah. Gunakan dua persamaan simpul untuk mencari $V_o$.',
   pos: { p: [60, 80], V1: [260, 80], V2: [440, 80], g: [60, 320] },
   elements() {
     return [
@@ -401,17 +423,20 @@ const P9 = {
   },
   analyze() {
     const s = run(this.elements(), this.ground);
-    return [out('Vo', 'V_o', s.v('V2'), 'phasor', 'V', null)];
+    return [
+      out('Vo', 'V_o', s.v('V2'), 'phasor', 'V', null),
+      out('V1', 'V_1', s.v('V1'), 'aux', 'V', null),
+    ];
   },
   expect: { Vo: C.c(138.08, -128.22) },
   display() { return [{ omega: null, elements: this.elements() }]; },
   steps(o) {
     return [
-      { j: 'Pilih acuan', t: 'Rel bawah sebagai acuan. Sumber 240 V menempel langsung ke acuan, jadi simpul pertama sudah tetap.' },
-      { j: 'Tulis KCL di simpul kedua', t: 'Di simpul V2 ada dua cabang: j10 Ω dari V1 dan 30 Ω ke acuan. Persamaannya (V2 − V1)/j10 + V2/30 = 0.' },
-      { j: 'Tulis KCL di simpul pertama', t: 'Di simpul V1 ada j10 Ω dari sumber, 50 Ω ke acuan, dan j10 Ω ke V2. Kalikan dengan j10 agar koefisien bulat.' },
-      { j: 'Selesaikan', t: 'Substitusi V2 dari persamaan pertama ke persamaan kedua, lalu kalikan dengan penyebut agar pecahan hilang.' },
-      { j: 'Hasil Vo', t: 'Vo = ' + fmt.rect(o.Vo.z) + ' V = ' + fmt.polar(o.Vo.z) + ' V.' },
+      { j: 'Pilih acuan', t: `Rel bawah sebagai acuan. Sumber $240\\angle 0^\\circ$ V menempel langsung ke acuan, jadi simpul pertama sudah tetap.` },
+      { j: 'KCL di simpul V_2', t: `$$\\dfrac{\\mathbf{V}_2 - \\mathbf{V}_1}{j10} + \\dfrac{\\mathbf{V}_2}{30} = 0$$` },
+      { j: 'KCL di simpul V_1', t: `Di $V_1$ ada $j10\\,\\Omega$ dari sumber, $50\\,\\Omega$ ke acuan, dan $j10\\,\\Omega$ ke $V_2$:$$\\dfrac{\\mathbf{V}_1 - 240}{j10} + \\dfrac{\\mathbf{V}_1}{50} + \\dfrac{\\mathbf{V}_1 - \\mathbf{V}_2}{j10} = 0$$` },
+      { j: 'Selesaikan dengan kalikan penyebut', t: `Kalikan dengan penyebut agar pecahan hilang. Dari persamaan kedua, $\\mathbf{V}_1 = ${Rc(o.V1.z)}$ V.` },
+      { j: 'Hasil V_o', t: `$$\\mathbf{V}_o = \\mathbf{V}_2 = ${Rc(o.Vo.z)}\\ \\text{V} = ${P(o.Vo.z)}\\ \\text{V}$$` },
     ];
   },
   pelajaran: [
@@ -419,7 +444,7 @@ const P9 = {
     'Simpul yang menempel pada sumber tegangan sudah tetap, jadi tidak perlu persamaan untuknya.',
   ],
   jebakan: [
-    'Jangan menghitung 1/30 sebagai desimal 0,0333. Simpan sebagai pecahan supaya hasilnya tetap eksak.',
+    'Jangan mengubah $\\frac{1}{30}$ menjadi desimal $0{,}0333$. Simpan sebagai pecahan agar hasilnya tetap eksak.',
   ],
 };
 
@@ -427,7 +452,7 @@ const P9 = {
 const P10 = {
   id: 'P9.55', judul: 'Node-voltage dengan sumber arus dan sumber tegangan, cari Vg',
   tipe: 'Node-voltage (sumber campuran)', omega: null, ground: 'g',
-  ringkas: 'Sumber arus 5 A dan sumber tegangan 20∠90° V dalam satu jaringan. Cari fasor Vg, yaitu selisih tegangan simpul A dan C.',
+  ringkas: 'Sumber arus 5 A dan sumber tegangan 20∠90° V dalam satu jaringan. Cari $\\mathbf{V}_g$, yaitu selisih tegangan simpul $A$ dan $C$.',
   pos: { g: [340, 320], A: [200, 120], B: [340, 200], C: [460, 120] },
   elements() {
     return [
@@ -441,25 +466,29 @@ const P10 = {
   },
   analyze() {
     const s = run(this.elements(), this.ground);
-    return [out('Vg', 'V_g', C.sub(s.v('A'), s.v('C')), 'phasor', 'V', null)];
+    return [
+      out('Vg', 'V_g', C.sub(s.v('A'), s.v('C')), 'phasor', 'V', null),
+      out('VA', 'V_A', s.v('A'), 'aux', 'V', null),
+      out('VB', 'V_B', s.v('B'), 'aux', 'V', null),
+    ];
   },
   expect: { Vg: C.c(-2.67, -18.67) },
   display() { return [{ omega: null, elements: this.elements() }]; },
   steps(o) {
     return [
-      { j: 'Pilih acuan dan tandai sumber tegangan tetap', t: 'Sumber 20∠90° V menempel di simpul C dan acuan, jadi V_C = j20 V sudah diketahui. Simpul C tidak perlu persamaan.' },
-      { j: 'Tulis KCL di simpul A', t: 'Dari A: (V_A − V_B)/(−j8) + (V_A − V_C)/(−j4) = 5 A, dengan 5 A masuk ke simpul A.' },
-      { j: 'Tulis KCL di simpul B', t: 'Dari B: (V_B − V_A)/(−j8) + V_B/j4 + (V_B − V_C)/12 = 0.' },
-      { j: 'Selesaikan dua persamaan', t: 'Kalikan dengan penyebut yang sama agar koefisiennya bulat, lalu selesaikan V_A dan V_B.' },
-      { j: 'Hitung Vg', t: 'Vg = V_A − V_C = ' + fmt.rect(o.Vg.z) + ' V = ' + fmt.polar(o.Vg.z) + ' V.' },
+      { j: 'Tandai tegangan tetap', t: `Sumber $20\\angle 90^\\circ$ V menempel di $C$ dan acuan, jadi $\\mathbf{V}_C = j20$ V sudah diketahui. Simpul $C$ tidak perlu persamaan.` },
+      { j: 'KCL di simpul A', t: `$$\\dfrac{\\mathbf{V}_A - \\mathbf{V}_B}{-j8} + \\dfrac{\\mathbf{V}_A - \\mathbf{V}_C}{-j4} = 5$$` },
+      { j: 'KCL di simpul B', t: `$$\\dfrac{\\mathbf{V}_B - \\mathbf{V}_A}{-j8} + \\dfrac{\\mathbf{V}_B}{j4} + \\dfrac{\\mathbf{V}_B - \\mathbf{V}_C}{12} = 0$$` },
+      { j: 'Selesaikan dua persamaan', t: `Hasilnya $\\mathbf{V}_A = ${Rc(o.VA.z)}$ V dan $\\mathbf{V}_B = ${Rc(o.VB.z)}$ V.` },
+      { j: 'Hitung V_g', t: `$$\\mathbf{V}_g = \\mathbf{V}_A - \\mathbf{V}_C = ${Rc(o.Vg.z)}\\ \\text{V} = ${P(o.Vg.z)}\\ \\text{V}$$` },
     ];
   },
   pelajaran: [
     'Sumber tegangan yang menempel ke acuan membuat satu simpul langsung tetap. Tandai itu lebih dulu.',
-    'Pilih kalikan dengan impedansi terkecil agar koefisien tetap bulat.',
+    'Kalikan dengan impedansi terkecil agar koefisien tetap bulat.',
   ],
   jebakan: [
-    'Kalkulator tan⁻¹ hanya memberi sudut di kuadran I dan IV. Periksa tanda bagian nyata dan khayal.',
+    'Kalkulator $\\tan^{-1}$ hanya memberi sudut kuadran I dan IV. Periksa tanda bagian nyata dan khayal.',
   ],
 };
 
@@ -467,7 +496,7 @@ const P10 = {
 const P11 = {
   id: 'P9.59', judul: 'Node-voltage dua sumber tak-bebas, cari Vo dan Io',
   tipe: 'Dua blok dengan sumber tak-bebas', omega: null, ground: 'g',
-  ringkas: 'Dua blok dihubungkan lewat sumber tak-bebas (Vo/10 dan 20·Io). Cari Vo dan Io.',
+  ringkas: 'Dua blok dihubungkan lewat sumber tak-bebas $V_o/10$ dan $20\\,I_o$. Cari $V_o$ dan $I_o$.',
   pos: { g: [60, 340], L: [240, 120], M: [360, 120], Vo: [560, 120] },
   elements() {
     return [
@@ -491,11 +520,11 @@ const P11 = {
   display() { return [{ omega: null, elements: this.elements() }]; },
   steps(o) {
     return [
-      { j: 'Samakan satuan dulu', t: 'Sumber arus diberi dalam mA, sedangkan resistor dalam Ω. Ubah semua ke A dan Ω sejak baris pertama: 6 + j13 mA = 0,006 + j0,013 A.' },
-      { j: 'Pilih acuan', t: 'Rel bawah sebagai acuan. Sumber tak-bebas 20·Io berpangkal di Vo, jadi kita tulis KCL di Vo.' },
-      { j: 'Tulis KCL di simpul Vo', t: 'Arus keluar dari Vo: 20·Io + Vo/50 + Vo/(−j25) = 0. Dengan Io diganti dari blok kiri, persamaan ini memuat Vo dan V_L.' },
-      { j: 'Blok kiri dengan Vo/10 sebagai tegangan tetap', t: 'Simpul M menempel sumber Vo/10 ke acuan, jadi V_M = Vo/10. Simpul L memakai KCL dengan sumber arus 6 + j13 mA.' },
-      { j: 'Selesaikan dan cek', t: 'Dari dua persamaan itu: Vo = ' + fmt.rect(o.Vo.z) + ' V = ' + fmt.polar(o.Vo.z) + ' V, dan Io = ' + fmt.rect(C.scale(1000, o.Io.z)) + ' mA = 10∠0° mA.' },
+      { j: 'Samakan satuan dulu', t: `Sumber arus diberi dalam mA, resistor dalam Ω. Ubah semua ke A dan Ω sejak awal: $6 + j13$ mA $= 0{,}006 + j0{,}013$ A.` },
+      { j: 'Pilih acuan', t: `Rel bawah sebagai acuan. Sumber $20\\,I_o$ berpangkal di $V_o$, jadi tulis KCL di $V_o$.` },
+      { j: 'KCL di simpul V_o', t: `$$20\\,\\mathbf{I}_o + \\dfrac{\\mathbf{V}_o}{50} + \\dfrac{\\mathbf{V}_o}{-j25} = 0$$` },
+      { j: 'Blok kiri dengan V_o/10 sebagai tegangan tetap', t: `Simpul $M$ menempel sumber $\\mathbf{V}_o/10$ ke acuan, jadi $\\mathbf{V}_M = \\mathbf{V}_o/10$. Simpul $L$ memakai KCL dengan sumber arus $6 + j13$ mA.` },
+      { j: 'Selesaikan dan cek', t: `Hasil: $$\\mathbf{V}_o = ${Rc(o.Vo.z)}\\ \\text{V} = ${P(o.Vo.z)}\\ \\text{V}\\qquad \\mathbf{I}_o = ${Rc(mA(o.Io.z))}\\ \\text{mA} = 10\\angle 0^\\circ\\ \\text{mA}$$` },
     ];
   },
   pelajaran: [
@@ -503,7 +532,7 @@ const P11 = {
     'Satuan di semua bagian harus sama. Satu mA yang dicampur Ω memberi hasil meleset faktor 1000.',
   ],
   jebakan: [
-    'Sumber tak-bebas 20·Io memakai arus dari elemen tertentu. Pastikan kamu memakai arah dan elemen yang sama dengan yang ada di gambar.',
+    'Sumber tak-bebas $20\\,I_o$ memakai arus dari elemen tertentu. Pastikan arah dan elemennya sama dengan gambar.',
   ],
 };
 
@@ -511,7 +540,7 @@ const P11 = {
 const P12 = {
   id: 'P9.64', judul: 'Mesh-current dengan sumber tak-bebas, cari vo(t)',
   tipe: 'Sumber tegangan tak-bebas (CCVS)', omega: 5000, ground: 'g',
-  ringkas: 'Sumber vg = 75 cos(5000t) V dan sumber 100·iΔ. Cari vo(t) keadaan tunak.',
+  ringkas: 'Sumber $v_g = 75\\cos(5000t)$ V dan sumber $100\\,i_\\Delta$. Cari $v_o(t)$ keadaan tunak.',
   pos: { p: [60, 80], TN: [240, 80], D: [240, 220], TR: [400, 80], g: [60, 320] },
   elements(w) {
     return [
@@ -526,25 +555,28 @@ const P12 = {
   analyze() {
     const w = this.omega;
     const s = run(this.elements(w), this.ground);
-    return [out('vo', 'v_o', s.v('TR'), 'phasor', 'V', w)];
+    return [
+      out('vo', 'v_o', s.v('TR'), 'phasor', 'V', w),
+      out('VTN', 'V_TN', s.v('TN'), 'aux', 'V', w),
+    ];
   },
   expect: { vo: PH(25, 90) },
   display() { return [{ omega: this.omega, elements: this.elements(this.omega) }]; },
   steps(o) {
     return [
-      { j: 'Tentukan ω dan reaktansi', t: 'ω = 5000 rad/s. X_C = −1/(5000 × 4×10⁻⁶) = −50 Ω. X_L(110 mH) = j550 Ω, X_L(4 mH) = j20 Ω.' },
-      { j: 'Tulis arah iΔ dan sumber tak-bebas', t: 'iΔ mengalir dari sumber ke kanan melewati kapasitor. Sumber 100·iΔ dibaca dengan tanda − di atas dan + di bawah, jadi KVL membacanya sebagai kenaikan 100·iΔ.' },
-      { j: 'Tentukan dua loop atau tegangan simpul', t: 'Gunakan tegangan simpul di TN dan TR. Simpul TN terhubung ke kapasitor, induktor 110 mH, dan induktor 4 mH.' },
-      { j: 'Hitung vo', t: 'vo ditentukan di TR, terhadap rel bawah. Hasil fasor: V_o = ' + fmt.polar(o.vo.z) + ' V.' },
-      { j: 'Bentuk waktu', t: 'vo(t) = ' + fmt.time(o.vo.z, 5000, 2, '') + ' V. Cek tanda terhadap gambar sebelum menyalin jawaban.' },
+      { j: 'Reaktansi pada ω = 5000 rad/s', t: `$$X_C = -\\dfrac{1}{5000 \\cdot 4\\cdot 10^{-6}} = -50\\ \\Omega\\qquad X_{L_1} = j550\\ \\Omega\\qquad X_{L_2} = j20\\ \\Omega$$` },
+      { j: 'Arah i_Δ dan sumber tak-bebas', t: `$i_\\Delta$ mengalir dari sumber ke kanan melewati kapasitor. Tanda sumber $100\\,i_\\Delta$ dibaca dari gambar, lalu dipakai di KVL.` },
+      { j: 'KCL di simpul kanan', t: `Di $V_{TR}$ ada $j20\\,\\Omega$ dari $V_{TN}$ dan $10\\,\\Omega$ ke acuan:$$\\dfrac{\\mathbf{V}_{TR} - \\mathbf{V}_{TN}}{j20} + \\dfrac{\\mathbf{V}_{TR}}{10} = 0\\quad\\Rightarrow\\quad \\mathbf{V}_{TN} = (1 + j2)\\,\\mathbf{V}_{TR}$$` },
+      { j: 'Hasil fasor v_o', t: `$$\\mathbf{V}_o = \\mathbf{V}_{TR} = ${P(o.vo.z)}\\ \\text{V}$$` },
+      { j: 'Bentuk waktu', t: `$$v_o(t) = ${Tm(o.vo.z, 5000)}\\ \\text{V}$$` },
     ];
   },
   pelajaran: [
-    'Dengan sumber tak-bebas berbentuk tegangan, lebih mudah memakai sumber itu di loop atau simpul langsung, bukan menganggapnya sumber bebas.',
-    'Tanda polaritas sumber tak-bebas sangat menentukan tanda jawaban. Baca dari gambar, jangan dari kunci saja.',
+    'Sumber tak-bebas berbentuk tegangan lebih mudah dipakai di loop atau simpul langsung, bukan dianggap sumber bebas.',
+    'Tanda polaritas sumber tak-bebas menentukan tanda jawaban. Baca dari gambar, jangan dari kunci saja.',
   ],
   jebakan: [
-    'Perbedaan tanda pada jawaban kunci bisa berasal dari polaritas sumber tak-bebas. Periksa gambar, lalu cek apakah hasilnya konsisten dengan KVL.',
+    'Perbedaan tanda pada kunci bisa berasal dari polaritas sumber tak-bebas. Periksa gambar, lalu cek apakah hasilnya konsisten dengan KVL.',
   ],
 };
 
@@ -552,7 +584,7 @@ const P12 = {
 const P13 = {
   id: 'P9.65', judul: 'Pembagi tegangan di domain frekuensi, cari vo(t)',
   tipe: 'Pembagi tegangan (seri)', omega: 100000, ground: 'g',
-  ringkas: 'Satu loop berisi R, C, L, dan R. Tegangan vo diambil antara kapasitor dan induktor. Cari vo(t) keadaan tunak.',
+  ringkas: 'Satu loop berisi R, C, L, dan R. Tegangan $v_o$ diambil antara kapasitor dan induktor. Cari $v_o(t)$ keadaan tunak.',
   pos: { p: [60, 80], n1: [200, 80], Vo: [360, 80], n2: [500, 80], g: [60, 320] },
   elements(w) {
     return [
@@ -571,20 +603,22 @@ const P13 = {
   expect: { vo: PH(167.04, 20.17) },
   display() { return [{ omega: this.omega, elements: this.elements(this.omega) }]; },
   steps(o) {
+    const z1 = C.c(1200, -3200);
+    const z2 = C.c(2400, 8000);
     return [
-      { j: 'Tentukan ω dan reaktansi', t: 'ω = 10⁵ rad/s. X_C = −1/(10⁵ × 3,125×10⁻⁹) = −3200 Ω. X_L = 10⁵ × 80×10⁻³ = 8000 Ω.' },
-      { j: 'Satu loop, jadi ini pembagi tegangan', t: 'Semua elemen dalam satu loop, arusnya sama. Vo diukur di antara kapasitor dan induktor, jadi Vo = Vg × Z_bawah / Z_total.' },
-      { j: 'Kelompokkan jadi dua blok', t: 'Z1 = 1200 − j3200 Ω (resistor dan kapasitor sebelum titik ukur). Z2 = 2400 + j8000 Ω (induktor dan resistor setelah titik ukur).' },
-      { j: 'Hitung dalam bentuk polar', t: 'Vo = Vg × Z2 / (Z1 + Z2) = 120∠0° × (2400 + j8000) / (3600 + j4800). Lebih mudah dihitung sebagai besar dibagi besar, sudut dikurangi sudut.' },
-      { j: 'Bentuk waktu', t: 'vo(t) = ' + fmt.time(o.vo.z, 100000, 2, '') + ' V.' },
+      { j: 'Reaktansi pada ω = 10⁵ rad/s', t: `$$X_C = -\\dfrac{1}{10^5 \\cdot 3{,}125\\cdot 10^{-9}} = -3200\\ \\Omega\\qquad X_L = 10^5 \\cdot 80\\cdot 10^{-3} = 8000\\ \\Omega$$` },
+      { j: 'Satu loop, jadi pembagi tegangan', t: `Semua elemen dalam satu loop dan arusnya sama. $\\mathbf{V}_o$ diukur di antara kapasitor dan induktor, jadi $\\mathbf{V}_o = \\mathbf{V}_g \\cdot \\dfrac{Z_2}{Z_1 + Z_2}$.` },
+      { j: 'Kelompokkan jadi dua blok', t: `$$Z_1 = 1200 - j3200\\ \\Omega\\qquad Z_2 = 2400 + j8000\\ \\Omega$$` },
+      { j: 'Hitung dalam polar', t: `$$\\mathbf{V}_o = 120\\angle 0^\\circ \\cdot \\dfrac{${Rc(z2)}}{${Rc(C.add(z1, z2))}} = 120 \\cdot \\dfrac{${P(z2)}}{${P(C.add(z1, z2))}}$$\nBesar dibagi besar, sudut dikurangi sudut: $\\mathbf{V}_o = ${P(o.vo.z)}$ V.` },
+      { j: 'Bentuk waktu', t: `$$v_o(t) = ${Tm(o.vo.z, 100000)}\\ \\text{V}$$` },
     ];
   },
   pelajaran: [
     'Pembagi tegangan hanya berlaku untuk dua blok seri. Jika ada cabang paralel di antaranya, gunakan analisis simpul.',
-    'Dalam polar, pembagian berarti besar dibagi besar, sudut dikurangi sudut.',
+    'Dalam polar, pembagian berarti besar dibagi besar dan sudut dikurangi sudut.',
   ],
   jebakan: [
-    'Tanda kapasitor sudah negatif. Menulis Z_C = +j3200 menghasilkan total yang berbeda dan jawaban yang salah.',
+    'Tanda kapasitor sudah negatif. Menulis $Z_C = +j3200$ memberi total dan sudut yang salah.',
   ],
 };
 
@@ -592,7 +626,7 @@ const P13 = {
 const P14 = {
   id: 'P9.67', judul: 'Dua sumber dengan frekuensi berbeda, superposisi',
   tipe: 'Superposisi (dua frekuensi)', omega: null, labelOmega: 'ω = 2000 dan 5000 rad/s', ground: 'g',
-  ringkas: 'Dua sumber berfrekuensi berbeda: 2000 rad/s dan 5000 rad/s. Tentukan teknik yang tepat, lalu cari vo(t).',
+  ringkas: 'Dua sumber berfrekuensi berbeda, yaitu $2000$ rad/s dan $5000$ rad/s. Tentukan teknik yang tepat, lalu cari $v_o(t)$.',
   pos: { p1: [60, 80], N: [240, 80], p2: [460, 80], g: [60, 320] },
   elements(w, v1, v2) {
     return [
@@ -625,19 +659,19 @@ const P14 = {
   },
   steps(o) {
     return [
-      { j: 'Pilih teknik', t: 'Koefisien t berbeda (2000 dan 5000), jadi ω berbeda. Satu rangkaian fasor tidak bisa memuat keduanya. Pakai superposisi.' },
-      { j: 'Kasus 1: hanya v1 aktif, ω = 2000 rad/s', t: 'Hubung singkat v2. Reaktansi: L = j2, C = −j5. Tegangan di N: V_o1 = ' + fmt.rect(o.Vo1.z) + ' V = ' + fmt.polar(o.Vo1.z) + ' V.' },
-      { j: 'Kasus 2: hanya v2 aktif, ω = 5000 rad/s', t: 'Hubung singkat v1. Reaktansi: L = j5, C = −j2. Tegangan di N: V_o2 = ' + fmt.rect(o.Vo2.z) + ' V = ' + fmt.polar(o.Vo2.z) + ' V.' },
-      { j: 'Gabungkan di domain waktu', t: 'Dua suku tidak bisa dijumlahkan sebagai fasor karena frekuensinya berbeda. Tulis dalam bentuk waktu lalu jumlahkan: vo(t) = ' + fmt.time(o.Vo1.z, 2000, 2, '') + ' + ' + fmt.time(o.Vo2.z, 5000, 2, '') + ' V.' },
+      { j: 'Pilih teknik', t: `Koefisien $t$ berbeda, yaitu $2000$ dan $5000$, jadi $\\omega$ berbeda. Satu rangkaian fasor tidak bisa memuat keduanya. Pakai superposisi.` },
+      { j: 'Kasus 1: hanya v_1 aktif, ω = 2000 rad/s', t: `Hubung singkat $v_2$. $L = j2\\,\\Omega$, $C = -j5\\,\\Omega$. Tegangan di $N$:$$\\mathbf{V}_{o1} = ${Rc(o.Vo1.z)}\\ \\text{V} = ${P(o.Vo1.z)}\\ \\text{V}$$` },
+      { j: 'Kasus 2: hanya v_2 aktif, ω = 5000 rad/s', t: `Hubung singkat $v_1$. $L = j5\\,\\Omega$, $C = -j2\\,\\Omega$. Tegangan di $N$:$$\\mathbf{V}_{o2} = ${Rc(o.Vo2.z)}\\ \\text{V} = ${P(o.Vo2.z)}\\ \\text{V}$$` },
+      { j: 'Jumlahkan di domain waktu', t: `Dua suku tidak bisa dijumlahkan sebagai fasor karena frekuensinya berbeda. Tulis dalam bentuk waktu lalu jumlahkan:$$v_o(t) = ${Tm(o.Vo1.z, 2000)}\\ \\text{V} + ${Tm(o.Vo2.z, 5000)}\\ \\text{V}$$` },
     ];
   },
   pelajaran: [
-    'Jika frekuensinya berbeda, reaktansi X_L dan X_C berbeda untuk tiap sumber. Satu rangkaian fasor tidak cukup.',
+    'Jika frekuensinya berbeda, $X_L$ dan $X_C$ berbeda untuk tiap sumber. Satu rangkaian fasor tidak cukup.',
     'Hasil superposisi bukan sinusoid tunggal, tetapi jumlah dua sinusoid dengan frekuensi berbeda.',
   ],
   jebakan: [
     'Jangan menjumlahkan fasor dari dua frekuensi. Hasilnya tidak mewakili kenyataan.',
-    'Saat menghubung singkat sumber tegangan, tetap pertahankan impedansinya. Yang dimatikan adalah tegangannya.',
+    'Saat menghubung singkat sumber tegangan, impedansinya tetap ada. Yang dimatikan hanya tegangannya.',
   ],
 };
 

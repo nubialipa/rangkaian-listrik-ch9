@@ -165,6 +165,33 @@
     },
   };
 
-  root.Solver = { C, L, Cap, run, fmt };
+  // Penulisan LaTeX (dirender KaTeX di halaman). Angka dibulatkan, nol di belakang koma dibuang.
+  const num = (x, d = 2) => {
+    const neg = x < 0 && Math.abs(x) >= 0.5 * Math.pow(10, -d);
+    let s = Math.abs(x).toFixed(d);
+    if (s.includes('.')) s = s.replace(/\.?0+$/, '');
+    return (neg ? '-' : '') + s.replace('.', '{,}');
+  };
+  const tex = {
+    num,
+    // bilangan kompleks bentuk rektangular: a + jb
+    rect(z, d = 2) {
+      const sg = z.im < 0 ? '-' : '+';
+      return `${num(z.re, d)} ${sg} j${num(Math.abs(z.im), d)}`;
+    },
+    // bentuk polar: r∠θ
+    polar(z, d = 2) {
+      return `${num(C.abs(z), d)}\\angle ${num(C.deg(z), d)}^\\circ`;
+    },
+    // bentuk waktu: r cos(wt + θ)
+    time(z, w, d = 2) {
+      const th = C.deg(z);
+      const sg = th < 0 ? '-' : '+';
+      return `${num(C.abs(z), d)}\\cos(${w}t ${sg} ${num(Math.abs(th), d)}^\\circ)`;
+    },
+    frac(a, b) { return `\\dfrac{${a}}{${b}}`; },
+  };
+
+  root.Solver = { C, L, Cap, run, fmt, tex };
   if (typeof module !== 'undefined') module.exports = root.Solver;
 })(typeof window !== 'undefined' ? window : globalThis);
