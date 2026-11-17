@@ -1,5 +1,5 @@
 # Belajar Rangkaian Listrik — Bab 9 (Analisis Fasor)
-
+ 
 Panduan belajar untuk 14 soal Bab 9 (analisis keadaan tunak sinusoid): langkah pengerjaan, animasi arus sesaat, dan hasil yang sudah diverifikasi.
 
 ## Isi situs
@@ -22,3 +22,4 @@ Semua 20 hasil yang memiliki kunci harus cocok (selisih di bawah 1%).
 - Animasi diperlambat agar mudah diamati. Bentuk gelombang arus tetap sama dengan hasil fasor.
 - Langkah dan penjelasan ditulis ulang sendiri. Angka kunci berasal dari soal Bab 9 yang dipakai sebagai bahan belajar.
 - Frekuensi sudut yang tidak disebut di soal (soal 5–11) ditampilkan sebagai impedansi tanpa frekuensi tertentu.
+
