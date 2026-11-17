@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Belajar Rangkaian Listrik — Bab 9 Analisis Fasor</title>
+<style>
+  :root {
+    --latar: #eef2f6;
+    --kartu: #ffffff;
+    --tinta: #1c2430;
+    --tinta-lembut: #556272;
+    --garis: #d7dee7;
+    --aksen: #1f5fa8;
+    --aksen-tua: #173f70;
+    --panel: #0f1b2a;
+    --panel-garis: #24344a;
+    --arus: #ffc35a;
+    --kabel: #b8c6d6;
+    --bagus: #1d7a4a;
+    --salah: #a33a2a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --latar: #0c1420;
+      --kartu: #142032;
+      --tinta: #e6edf5;
+      --tinta-lembut: #9aa8b8;
+      --garis: #26354a;
+      --aksen: #7fb4f0;
+      --aksen-tua: #a9cdf5;
+      --panel: #070e18;
+      --panel-garis: #1d2b40;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--latar);
+    color: var(--tinta);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  header.atas {
+    background: var(--aksen-tua);
+    color: #fff;
+    padding: 0.9rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  header.atas .judul { font-weight: 700; font-size: 1.05rem; }
+  header.atas .sub { opacity: .8; font-size: .85rem; }
+  nav.tab { display: flex; gap: .25rem; flex-wrap: wrap; }
+  nav.tab a {
+    color: #fff; text-decoration: none; padding: .4rem .8rem; border-radius: 6px; font-size: .92rem;
+    opacity: .85;
+  }
+  nav.tab a:hover { background: rgba(255,255,255,.12); opacity: 1; }
+  nav.tab a.aktif { background: rgba(255,255,255,.2); opacity: 1; font-weight: 600; }
+  main { max-width: 1280px; margin: 0 auto; padding: 1.5rem; }
+  h1 { font-size: 1.6rem; margin: 0 0 .4rem; }
+  h2 { font-size: 1.2rem; margin: 0 0 .6rem; }
+  h3 { font-size: 1rem; margin: 0 0 .4rem; }
+  p { margin: 0 0 .6rem; }
+  .muted { color: var(--tinta-lembut); }
+  .kartu {
+    background: var(--kartu);
+    border: 1px solid var(--garis);
+    border-radius: 10px;
+    padding: 1.1rem 1.2rem;
+    margin-bottom: 1rem;
+  }
+  .grid-soal { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .9rem; }
+  .kartu-soal { text-decoration: none; color: inherit; display: block; transition: border-color .15s; }
+  .kartu-soal:hover { border-color: var(--aksen); }
+  .nomor { font-size: .78rem; font-weight: 700; color: var(--aksen); letter-spacing: .04em; }
+  .chip {
+    display: inline-block; font-size: .75rem; padding: .1rem .55rem; border-radius: 999px;
+    background: rgba(31,95,168,.1); color: var(--aksen); margin-right: .3rem; margin-top: .25rem;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  th, td { text-align: left; padding: .5rem .55rem; border-bottom: 1px solid var(--garis); vertical-align: top; }
+  th { font-weight: 600; color: var(--tinta-lembut); font-size: .82rem; text-transform: uppercase; letter-spacing: .03em; }
+  .ok { color: var(--bagus); font-weight: 700; }
+  .beda { color: var(--salah); font-weight: 700; }
+  code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .9em; }
+
+  /* Halaman soal */
+  .soal-atas { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap; margin-bottom: .3rem; }
+  .soal-dua { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 1.1rem; align-items: start; }
+  @media (max-width: 960px) { .soal-dua { grid-template-columns: 1fr; } }
+
+  .panel-rangkaian {
+    background: var(--panel); border: 1px solid var(--panel-garis); border-radius: 10px;
+    padding: .6rem; position: relative;
+  }
+  .panel-rangkaian svg { width: 100%; height: auto; display: block; }
+  .kontrol { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; padding: .6rem .3rem .2rem; color: #c9d4e2; font-size: .85rem; }
+  .kontrol button {
+    font: inherit; font-size: .85rem; padding: .35rem .8rem; border-radius: 6px; border: 1px solid #3a4f6d;
+    background: #1a2a40; color: #e6edf5; cursor: pointer;
+  }
+  .kontrol button:hover { background: #22364f; }
+  .kontrol button:focus-visible { outline: 2px solid var(--arus); outline-offset: 2px; }
+  .kontrol input[type=range] { width: 130px; accent-color: var(--arus); }
+  .kontrol label { display: flex; gap: .3rem; align-items: center; cursor: pointer; }
+  .catatan-animasi { color: #8d9cb0; font-size: .8rem; margin-top: .3rem; padding: 0 .3rem; }
+
+  .stepper-atas { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin-bottom: .5rem; }
+  .titik { display: flex; gap: .3rem; flex-wrap: wrap; }
+  .titik span { width: 9px; height: 9px; border-radius: 50%; background: var(--garis); display: inline-block; }
+  .titik span.aktif { background: var(--aksen); }
+  .titik span.lewat { background: var(--aksen); opacity: .45; }
+  .tombol {
+    font: inherit; font-size: .9rem; padding: .45rem .9rem; border-radius: 7px; border: 1px solid var(--garis);
+    background: var(--kartu); color: var(--tinta); cursor: pointer;
+  }
+  .tombol.utama { background: var(--aksen); border-color: var(--aksen); color: #fff; }
+  .tombol:disabled { opacity: .4; cursor: default; }
+  .tombol:focus-visible { outline: 2px solid var(--aksen); outline-offset: 2px; }
+  .langkah-judul { font-weight: 700; margin-bottom: .35rem; }
+  .langkah-teks { font-size: .98rem; min-height: 4.5rem; }
+  .baris-nav { display: flex; justify-content: space-between; gap: .6rem; margin-top: .9rem; }
+
+  .hasil-baris { display: grid; grid-template-columns: auto 1fr; gap: .15rem .8rem; font-size: .92rem; }
+  .hasil-baris .k { color: var(--tinta-lembut); }
+  .hasil-baris .v { font-family: ui-monospace, Consolas, monospace; font-size: .9em; }
+  ul.daftar { margin: .2rem 0 0; padding-left: 1.1rem; }
+  ul.daftar li { margin-bottom: .35rem; font-size: .93rem; }
+  .jebakan li::marker { color: var(--salah); }
+
+  .peta-tabel td:first-child { font-weight: 600; white-space: nowrap; }
+  .langkah-peta { counter-reset: n; list-style: none; padding: 0; margin: 0; }
+  .langkah-peta li { counter-increment: n; padding-left: 2.2rem; position: relative; margin-bottom: .75rem; }
+  .langkah-peta li::before {
+    content: counter(n); position: absolute; left: 0; top: 0; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+    background: var(--aksen); color: #fff; font-weight: 700; font-size: .85rem; display: grid; place-items: center;
+  }
+  footer { text-align: center; color: var(--tinta-lembut); font-size: .8rem; padding: 1.5rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .panel-rangkaian { }
+  }
+</style>
+</head>
+<body>
+<header class="atas">
+  <div>
+    <div class="judul">Belajar Rangkaian Listrik · Bab 9</div>
+    <div class="sub">Analisis keadaan tunak sinusoid (fasor) · 14 soal dengan animasi</div>
+  </div>
+  <nav class="tab" id="tab">
+    <a href="#/" data-tab="peta">Peta belajar</a>
+    <a href="#/soal" data-tab="soal">Soal 1–14</a>
+    <a href="#/kunci" data-tab="kunci">Kunci verifikasi</a>
+  </nav>
+</header>
+
+<main id="app"></main>
+
+<footer>
+  Solver menghitung ulang setiap soal di browser (Modified Nodal Analysis, bilangan kompleks). Hasilnya dicocokkan dengan kunci jawaban pada halaman Kunci verifikasi.
+</footer>
+
+<script src="js/solver.js"></script>
+<script src="js/problems.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
