@@ -371,6 +371,13 @@
     const kepala = bagian && bagian[0];
     if (kepala === 'contoh') return renderContohRute(host, bagian[1]);
     if (kepala === 'ujian') return renderUjian(host);
+    if (kepala === 'kuis') {
+      if (bagian[1]) {
+        if (KUIS.some((k) => k.id === bagian[1])) return renderContohRute(host, bagian[1], KUIS, 'kuis', 'SOAL KUIS');
+        return renderKuisDaftar(host);
+      }
+      return renderKuisDaftar(host);
+    }
     if (kepala === 'glosarium') return renderGlosarium(host);
     const idx = kepala ? PELAJARAN.findIndex((p) => p.id === kepala) : -1;
     if (idx < 0) return renderDaftar(host);
@@ -382,7 +389,7 @@
       <h1>Penjelasan materi Bab 9</h1>
       <div class="kartu">
         <h3>Mulai dari sini</h3>
-        <p>Ujian Kamis pukul 08.00 hanya satu soal, tetapi soalnya bisa berasal dari bab ini. Urutan belajar yang disarankan:</p>
+        <p><b>Untuk kuis Kamis, buka <a href="#/materi/kuis">Paket kuis</a> dulu.</b> Di sana ada urutan prioritas dari dosen dan jadwal dua harinya. Bagian di bawah ini adalah urutan belajar umum:</p>
         <ol class="langkah-peta">
           <li>Penjelasan materi bagian 1 sampai 3 (sinus, fasor, elemen R/L/C).</li>
           <li><a href="#/materi/contoh">Contoh terbimbing</a>, mulai dari contoh 1.</li>
@@ -458,18 +465,18 @@
   }
 
   /* ---------- contoh terbimbing: satu langkah per klik ---------- */
-  function renderContohRute(host, id) {
-    const c = (typeof CONTOH !== 'undefined' ? CONTOH : []).find((x) => x.id === id);
+  function renderContohRute(host, id, daftar = CONTOH, prefix = 'contoh', judulSeri = 'CONTOH') {
+    const c = daftar.find((x) => x.id === id);
     if (!c) return renderContohDaftar(host);
     const r = c.hitung();
     const langkah = c.langkah(r);
-    const idx = CONTOH.indexOf(c);
-    const sebelum = idx > 0 ? CONTOH[idx - 1] : null;
-    const sesudah = idx < CONTOH.length - 1 ? CONTOH[idx + 1] : null;
+    const idx = daftar.indexOf(c);
+    const sebelum = idx > 0 ? daftar[idx - 1] : null;
+    const sesudah = idx < daftar.length - 1 ? daftar[idx + 1] : null;
     let tampil = 1; // jumlah langkah yang sudah terbuka
 
     host.innerHTML = `
-      <div class="nomor">CONTOH ${idx + 1} DARI ${CONTOH.length}</div>
+      <div class="nomor">${judulSeri} ${idx + 1} DARI ${daftar.length}</div>
       <h1>${esc(c.judul)}</h1>
       <div class="kartu">
         <h3>Soal</h3>
@@ -498,8 +505,8 @@
         <p class="muted" style="margin-top:.6rem">Hasil dihitung ulang oleh solver dan sudah dicocokkan dengan jawaban dosen.</p>
       </div>
       <div class="baris-nav">
-        ${sebelum ? `<a class="tombol" href="#/materi/contoh/${sebelum.id}">← ${esc(sebelum.judul)}</a>` : `<a class="tombol" href="#/materi">Kembali ke materi</a>`}
-        ${sesudah ? `<a class="tombol" href="#/materi/contoh/${sesudah.id}">${esc(sesudah.judul)} →</a>` : `<a class="tombol" href="#/materi/ujian">Panduan ujian →</a>`}
+        ${sebelum ? `<a class="tombol" href="#/materi/${prefix}/${sebelum.id}">← ${esc(sebelum.judul)}</a>` : `<a class="tombol" href="#/materi/${prefix === 'kuis' ? 'kuis' : 'contoh'}">Kembali</a>`}
+        ${sesudah ? `<a class="tombol" href="#/materi/${prefix}/${sesudah.id}">${esc(sesudah.judul)} →</a>` : `<a class="tombol" href="#/materi/${prefix === 'kuis' ? 'kuis' : 'ujian'}">${prefix === 'kuis' ? 'Kembali ke paket kuis' : 'Panduan ujian'} →</a>`}
       </div>`;
 
     const gambarEl = host.querySelector('#contoh-gambar');
@@ -650,6 +657,91 @@
           ${GLOSARIUM.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}
         </dl>
       </div>`;
+  }
+
+  /* ---------- paket kuis Kamis ---------- */
+  function renderKuisDaftar(host) {
+    const prioritas = [
+      { tingkat: 'Tingkat 1 — wajib (dosen sendiri yang mengerjakan)', baris: [
+        ['P9.28', 'Seri RLC satu loop', '#/soal/P9.28'],
+        ['K2 (P9.34)', 'Pembagi arus dua cabang', '#/materi/kuis/K2'],
+        ['P9.65', 'Pembagi tegangan', '#/soal/P9.65'],
+        ['K3 (P9.66)', 'Pembagi arus, kuadran III', '#/materi/kuis/K3'],
+        ['P9.33', 'Cari Z dengan KCL', '#/soal/P9.33'],
+        ['K1 (P9.32)', 'KVL/KCL berantai, cari I_b dan Z (paling panjang)', '#/materi/kuis/K1'],
+      ] },
+      { tingkat: 'Tingkat 2 — penting', baris: [
+        ['P9.22', 'Zab seri–paralel tanpa sumber', '#/soal/P9.22'],
+        ['P9.30', 'Seri–paralel, sumber sinus', '#/soal/P9.30'],
+        ['P9.31', 'Sumber arus, beda waktu dalam µs', '#/soal/P9.31'],
+        ['P9.44', 'Transformasi sumber berantai → Norton', '#/soal/P9.44'],
+        ['P9.49', 'Thévenin dengan sumber tak-bebas', '#/soal/P9.49'],
+      ] },
+      { tingkat: 'Tingkat 3 — kalau sempat', baris: [
+        ['P9.52', 'Zab dengan sumber tak-bebas (sumber uji)', '#/soal/P9.52'],
+        ['K4 (AP 9.11)', 'Thévenin dengan sumber tak-bebas', '#/materi/kuis/K4'],
+        ['E7', 'Δ → Y, hanya kalau berbentuk jembatan', '#/materi/kuis'],
+        ['P9.67', 'Superposisi dua frekuensi (paling akhir)', '#/soal/P9.67'],
+      ] },
+    ];
+    host.innerHTML = `
+      <h1>Paket kuis Kamis 19/11, 08.00</h1>
+      <div class="kartu">
+        <h3>Batas materi</h3>
+        <ul class="daftar">
+          <li><b>Masuk:</b> slide 1–51, dan Section 9.1–9.7 dari buku. Teknik yang boleh dipakai: fasor, impedansi, seri–paralel, admitansi, pembagi tegangan dan arus, Δ→Y, transformasi sumber, serta Thévenin–Norton termasuk sumber uji.</li>
+          <li><b>Tidak diuji:</b> tegangan simpul (node-voltage), arus mesh (mesh-current), dan transformator. Artinya contoh 1 dan 2 di bagian Contoh terbimbing tidak masuk kuis. Boleh dilewati kalau waktu sempit.</li>
+        </ul>
+      </div>
+
+      <div class="kartu">
+        <h3>Urutan prioritas</h3>
+        <p class="muted">Kalau waktu habis, kerjakan dari atas. Di kolom kanan ada tautan ke soal atau langkah yang dimaksud.</p>
+        ${prioritas.map((g) => `
+          <h4 style="margin:.8rem 0 .3rem">${esc(g.tingkat)}</h4>
+          <table class="peta-tabel">
+            <tr><th>Soal</th><th>Jenis</th></tr>
+            ${g.baris.map(([s, j, href]) => `<tr><td><a href="${href}">${esc(s)}</a></td><td>${esc(j)}</td></tr>`).join('')}
+          </table>`).join('')}
+      </div>
+
+      <div class="kartu">
+        <h3>Jadwal dua hari</h3>
+        <ul class="daftar">
+          <li><b>Selasa malam (≈2 jam):</b> baca Contoh dan Penjelasan materi E1–E4. Lalu tulis ulang K2 dan P9.34 dari nol tanpa melihat langkah.</li>
+          <li><b>Rabu pagi (≈2 jam):</b> P9.65, P9.66 (K3), P9.22.</li>
+          <li><b>Rabu siang (≈1,5 jam):</b> P9.30 dan P9.31. Keduanya menguji hal yang sama: ubah sin ke cos dan periksa kuadran.</li>
+          <li><b>Rabu sore (≈1,5 jam):</b> P9.33 dan K1. Pola yang sama untuk "cari Z": lengkapi dulu arus atau tegangan yang kurang, baru Z = V/I.</li>
+          <li><b>Rabu malam (≈2 jam):</b> P9.44, P9.49. Kalau masih kuat, P9.52 dan K4.</li>
+          <li><b>Rabu sebelum tidur (≈20 menit):</b> baca E7 sekali saja. Δ→Y hanya dipakai pada rangkaian jembatan.</li>
+          <li><b>Kamis 06.30–07.45:</b> jangan belajar materi baru. Baca kartu 30 detik, lalu kerjakan ulang P9.28 dan K2 dari nol dengan timer. Itu dua soal yang paling mungkin keluar dan paling cepat.</li>
+        </ul>
+      </div>
+
+      <div class="kartu">
+        <h3>Kartu 30 detik untuk kuis</h3>
+        <ul class="daftar">
+          <li><b>Seri RLC satu loop</b>: hitung ω, lalu X_L = ωL dan X_C = −1/(ωC). Setelah jadi Z, satu pembagian V/Z.</li>
+          <li><b>Pembagi arus dua cabang</b>: gabung tiap cabang jadi satu Z. Pembilang = impedansi cabang lawan.</li>
+          <li><b>Pembagi tegangan</b>: kelompokkan menjadi dua blok seri. Rumus V_o = V_g·Z₂/(Z₁+Z₂) hanya berlaku untuk dua blok seri.</li>
+          <li><b>Thévenin dengan sumber tak-bebas</b>: hitung V_Th (terminal terbuka), lalu I_sc. Z_Th = V_Th / I_sc. Sumber tak-bebas tidak boleh dimatikan.</li>
+          <li><b>Soal yang meminta "steady-state expression"</b>: jawaban harus berupa fungsi waktu cos(ωt + θ), bukan fasor.</li>
+        </ul>
+      </div>
+
+      <div class="kartu">
+        <h3>Daftar periksa pagi kuis</h3>
+        <ul class="daftar">
+          <li>Kalkulator di mode CMPLX dan sudut DEG (layar menampilkan D, bukan R).</li>
+          <li>Z_C selalu bertanda minus: Z_C = −j/(ωC). Z_L = +jωL.</li>
+          <li>Sumber dalam sinus: geser −90° sebelum jadi fasor.</li>
+          <li>Pembagi arus: pembilang = impedansi cabang lawan. Pembagi tegangan: pembilang = impedansi cabang sendiri.</li>
+          <li>Setelah dapat bentuk a + jb, cek tanda a dan b untuk kuadran sebelum menulis sudut.</li>
+          <li>Kalau soal minta "rectangular and polar", tulis keduanya.</li>
+          <li>Satuan ditulis di jawaban akhir: V, A, mA, Ω, µs.</li>
+        </ul>
+      </div>`;
+    math(host);
   }
 
   window.Materi = { render, PELAJARAN };
