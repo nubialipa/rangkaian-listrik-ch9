@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cek Kelayakan PPh Final 0,5% UMKM</title>
+<meta name="description" content="Cek apakah usaha kamu berhak memakai PPh Final 0,5% menurut PP 20/2026, dan lihat estimasi pajaknya.">
+<style>
+  :root { --bg:#f7f7f5; --fg:#1d1d1b; --card:#fff; --muted:#5f6368; --accent:#0a7d4f; --bad:#b3261e; --line:#d9d9d4; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#141414; --fg:#eee; --card:#1f1f1f; --muted:#a0a0a0; --accent:#4cc38a; --bad:#f2847c; --line:#333; }
+  }
+  :root[data-theme="dark"] { --bg:#141414; --fg:#eee; --card:#1f1f1f; --muted:#a0a0a0; --accent:#4cc38a; --bad:#f2847c; --line:#333; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height:1.5; }
+  main { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.5rem; margin: 0 0 8px; }
+  p.lead { color: var(--muted); margin: 0 0 20px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  label { display:block; font-weight:600; margin: 14px 0 6px; }
+  select, input { width:100%; box-sizing:border-box; font: inherit; padding: 10px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--fg); }
+  button { margin-top: 18px; width:100%; font: inherit; font-weight:600; padding: 12px; border:0; border-radius:8px; background:var(--accent); color:#fff; cursor:pointer; }
+  .result { margin-top: 20px; padding: 16px; border-radius: 10px; border:1px solid var(--line); }
+  .result h2 { font-size: 1.1rem; margin: 0 0 8px; }
+  .ok { color: var(--accent); }
+  .no { color: var(--bad); }
+  ul { padding-left: 20px; margin: 8px 0 0; }
+  .disclaimer { font-size: .85rem; color: var(--muted); margin-top: 24px; }
+  .error { color: var(--bad); margin-top: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Cek Kelayakan PPh Final 0,5% UMKM</h1>
+  <p class="lead">Isi data usaha kamu untuk mengecek kelayakan menurut PP 20/2026 dan melihat estimasi pajaknya.</p>
+
+  <form class="card" id="f" novalidate>
+    <label for="entity">Jenis wajib pajak</label>
+    <select id="entity"></select>
+
+    <label for="profession">Profesi utama</label>
+    <select id="profession"></select>
+
+    <label for="turnover">Omzet bruto setahun (Rp)</label>
+    <input id="turnover" type="number" min="0" step="1000000" inputmode="numeric" placeholder="contoh: 300000000" required>
+
+    <div id="coopWrap" hidden>
+      <label for="coopYears">Sudah berapa tahun pajak sejak koperasi terdaftar?</label>
+      <input id="coopYears" type="number" min="0" max="50" step="1" value="0">
+    </div>
+
+    <button type="submit">Cek sekarang</button>
+    <div class="error" id="err" role="alert"></div>
+  </form>
+
+  <section class="result" id="out" hidden aria-live="polite"></section>
+
+  <p class="disclaimer">
+    Alat ini hanya membantu memperkirakan dan bukan nasihat pajak. Aturan bisa berubah dan masih bergantung pada kondisi masing-masing wajib pajak.
+    Pastikan kembali di <a href="https://www.pajak.go.id" rel="noopener">pajak.go.id</a> atau dengan konsultan pajak sebelum melapor. Data yang kamu isi tidak dikirim ke server mana pun.
+  </p>
+</main>
+<script src="rules.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
