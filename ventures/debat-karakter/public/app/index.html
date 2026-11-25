@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aplikasi Sidang Karakter</title>
+<meta name="description" content="Debat karakter fiksi dengan argumen berbasis cerita dan kronologi anti-spoiler.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main>
+  <header class="topbar">
+    <a class="brand" href="/"><img src="/logo.svg" alt="" width="32" height="32"> Sidang Karakter</a>
+    <div id="account" class="small"></div>
+  </header>
+
+  <section class="card" id="authBox" hidden>
+    <h2 id="authTitle" class="mt0">Masuk</h2>
+    <form id="authForm" novalidate>
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username" maxlength="20" required>
+      <label for="password">Kata sandi</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" maxlength="200" required>
+      <div class="error" id="authErr" role="alert"></div>
+      <p class="mt-sm">
+        <button type="submit" id="authSubmit">Masuk</button>
+        <button type="button" class="ghost" id="authToggle">Belum punya akun? Daftar</button>
+      </p>
+    </form>
+  </section>
+
+  <section class="card" id="pickBox">
+    <label for="char"><strong>Karakter</strong></label>
+    <select id="char"></select>
+    <p class="verdict mt-sm" id="question"></p>
+    <p class="small muted" id="sourceNote"></p>
+  </section>
+
+  <section class="card">
+    <label for="progress"><span id="progressLabel">Titik progres</span></label>
+    <input id="progress" type="range" min="0" value="0">
+    <p class="small muted" id="progressHint"></p>
+  </section>
+
+  <h2>Kronologi yang terbuka</h2>
+  <div class="card"><ul class="clean" id="timeline"></ul></div>
+
+  <h2>Papan debat</h2>
+  <div class="card verdict" id="verdict"></div>
+  <div class="card"><ul class="clean" id="args"></ul></div>
+
+  <h2>Tulis argumen</h2>
+  <form class="card" id="argForm" novalidate>
+    <div class="row">
+      <div>
+        <label for="stance">Posisi</label>
+        <select id="stance"><option value="pro">Pro</option><option value="kontra">Kontra</option></select>
+      </div>
+      <div>
+        <label for="ref">Merujuk ke titik</label>
+        <select id="ref"></select>
+      </div>
+    </div>
+    <label for="text">Argumen (20–600 karakter)</label>
+    <textarea id="text" maxlength="600" placeholder="Tulis argumenmu dan sebut kejadian yang kamu rujuk."></textarea>
+    <p class="small muted tight" id="counter">0 / 600</p>
+    <div class="error" id="argErr" role="alert"></div>
+    <button type="submit" id="argSubmit">Kirim argumen</button>
+  </form>
+
+  <p class="notice small mt-lg">Argumen dan suara disimpan di server. Progres tamu hanya disimpan di perangkat ini.</p>
+</main>
+<script src="/app/app.js" defer></script>
+</body>
+</html>

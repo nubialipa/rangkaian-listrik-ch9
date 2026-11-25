@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kebijakan privasi · Sidang Karakter</title>
+<meta name="description" content="Data apa yang dikumpulkan Sidang Karakter dan bagaimana dipakai.">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main>
+  <header class="topbar">
+    <a class="brand" href="/"><img src="/logo.svg" alt="" width="32" height="32"> Sidang Karakter</a>
+  </header>
+  <h1>Kebijakan privasi</h1>
+  <p class="muted small">Berlaku untuk layanan Sidang Karakter. Tanggal efektif: ditentukan saat rilis.</p>
+
+  <h2>Data yang kami simpan</h2>
+  <ul>
+    <li><strong>Akun:</strong> username dan hash kata sandi (PBKDF2-SHA256, dengan salt acak). Kata sandi asli tidak pernah disimpan.</li>
+    <li><strong>Sesi:</strong> token acak yang disimpan dalam bentuk hash SHA-256. Cookie bersifat HttpOnly dan Secure, berlaku 30 hari.</li>
+    <li><strong>Progres dan konten:</strong> titik progres per karakter, argumen, suara, dan laporan yang kamu buat.</li>
+    <li><strong>Pembatasan penyalahgunaan:</strong> jumlah permintaan per IP atau akun dalam jendela waktu singkat. Data ini dihapus setelah jendela waktunya lewat.</li>
+  </ul>
+
+  <h2>Progres tamu</h2>
+  <p>Jika kamu tidak masuk, progres hanya disimpan di penyimpanan lokal perangkatmu dan tidak dikirim sebagai data akun. Saat masuk atau mendaftar, progres itu dipindahkan ke akunmu.</p>
+
+  <h2>Yang tidak kami lakukan</h2>
+  <ul>
+    <li>Tidak menjual data pengguna.</li>
+    <li>Tidak memakai iklan pihak ketiga yang melacak kamu pada versi ini.</li>
+    <li>Tidak menampilkan username di luar argumen yang kamu tulis sendiri.</li>
+  </ul>
+
+  <h2>Permintaan data</h2>
+  <p>Untuk meminta penghapusan akun atau data, hubungi pengelola layanan. Alamat kontak akan dicantumkan saat rilis.</p>
+</main>
+</body>
+</html>

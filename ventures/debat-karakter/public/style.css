@@ -1,0 +1,89 @@
+:root {
+  --bg: #f6f5f1;
+  --surface: #ffffff;
+  --fg: #1c1b19;
+  --muted: #5d5a53;
+  --line: #dedbd2;
+  --brand: #4a3fb5;
+  --brand-fg: #ffffff;
+  --pro: #0d7a4f;
+  --kontra: #a4362a;
+  --danger: #b3261e;
+  --radius: 14px;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121211; --surface: #1d1c1a; --fg: #f1efe9; --muted: #aba79c; --line: #34322e;
+    --brand: #8d84ff; --brand-fg: #111; --pro: #55c48e; --kontra: #f08a7e; --danger: #f2877f;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121211; --surface: #1d1c1a; --fg: #f1efe9; --muted: #aba79c; --line: #34322e;
+  --brand: #8d84ff; --brand-fg: #111; --pro: #55c48e; --kontra: #f08a7e; --danger: #f2877f;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.55;
+}
+a { color: var(--brand); }
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 56px; }
+h1 { font-size: 1.7rem; line-height: 1.2; margin: 0 0 8px; }
+h2 { font-size: 1.15rem; margin: 28px 0 10px; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; color: var(--fg); }
+.brand img { width: 32px; height: 32px; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px; margin-top: 12px;
+}
+label { display: block; font-weight: 600; margin: 12px 0 6px; }
+input, select, textarea {
+  width: 100%; font: inherit; color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+}
+textarea { min-height: 96px; resize: vertical; }
+input[type="range"] { padding: 0; accent-color: var(--brand); }
+button, .btn {
+  font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: 10px 16px;
+  background: var(--brand); color: var(--brand-fg); cursor: pointer; text-decoration: none; display: inline-block;
+}
+button.ghost { background: transparent; color: var(--brand); border: 1px solid var(--line); }
+button.small-btn { padding: 6px 10px; font-size: .85rem; }
+button:disabled { opacity: .45; cursor: default; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand) 55%, transparent); outline-offset: 2px;
+}
+
+ul.clean { list-style: none; padding: 0; margin: 0; }
+ul.clean > li { padding: 12px 0; border-bottom: 1px solid var(--line); }
+ul.clean > li:last-child { border-bottom: 0; }
+.tag { display: inline-block; font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.tag.pro { color: var(--pro); }
+.tag.kontra { color: var(--kontra); }
+.badge { font-size: .75rem; color: var(--muted); }
+.arg-text { margin: 8px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.arg-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.verdict { font-weight: 600; }
+.error { color: var(--danger); min-height: 1.3em; margin: 8px 0 0; }
+.notice { border-left: 4px solid var(--brand); padding: 10px 12px; background: var(--surface); border-radius: 8px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 520px) { .row { grid-template-columns: 1fr; } h1 { font-size: 1.45rem; } }
+[hidden] { display: none !important; }
+.mt0 { margin-top: 0; }
+.mt-sm { margin-top: 10px; }
+.mt-lg { margin-top: 24px; }
+.tight { margin: 4px 0 0; }
+
+/* Landing */
+.hero { padding: 24px 0 8px; }
+.hero p.lead { font-size: 1.1rem; color: var(--muted); margin: 0 0 18px; }
+.features { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 12px 0; }
+.features .card h3 { margin: 0 0 6px; font-size: 1rem; }
+.features .card p { margin: 0; color: var(--muted); font-size: .95rem; }
+footer { margin-top: 40px; color: var(--muted); font-size: .85rem; }

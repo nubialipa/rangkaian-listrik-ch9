@@ -1,0 +1,20 @@
+{
+  "name": "sidang-karakter-worker",
+  "version": "1.0.0",
+  "description": "Backend Sidang Karakter (Cloudflare Workers + D1)",
+  "main": "src/index.js",
+  "scripts": {
+    "test:unit": "node --test test/logic.test.js test/auth.test.js",
+    "db:init": "wrangler d1 execute sidang-karakter --local --file=schema.sql",
+    "dev": "wrangler dev --local",
+    "test:api": "node test/api.integration.mjs",
+    "deploy": "wrangler deploy"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "wrangler": "^4.168.0"
+  },
+  "private": true,
+  "type": "module"
+}

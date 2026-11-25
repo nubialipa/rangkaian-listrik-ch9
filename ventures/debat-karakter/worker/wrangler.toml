@@ -1,0 +1,16 @@
+name = "sidang-karakter"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+# Berkas statis (situs) dilayani dari folder public/.
+# Hanya /api/* yang dijalankan oleh Worker.
+[assets]
+directory = "../public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+# Database D1. Ganti database_id dengan ID asli setelah `wrangler d1 create sidang-karakter`.
+[[d1_databases]]
+binding = "DB"
+database_name = "sidang-karakter"
+database_id = "00000000-0000-0000-0000-000000000000"
