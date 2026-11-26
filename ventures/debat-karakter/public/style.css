@@ -87,3 +87,32 @@ ul.clean > li:last-child { border-bottom: 0; }
 .features .card h3 { margin: 0 0 6px; font-size: 1rem; }
 .features .card p { margin: 0; color: var(--muted); font-size: .95rem; }
 footer { margin-top: 40px; color: var(--muted); font-size: .85rem; }
+
+/* ---------- Aplikasi ---------- */
+.app { max-width: 720px; }
+.section { margin-top: 28px; }
+.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 8px; }
+.section-head h2 { margin: 0; }
+.hero-card {
+  margin-top: 16px; padding: 20px; border-radius: var(--radius); border: 1px solid var(--line);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--brand) 14%, var(--surface)), var(--surface) 70%);
+}
+.eyebrow { font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.hero-card select { font-weight: 600; }
+.question { font-size: 1.45rem; line-height: 1.25; margin: 14px 0 8px; }
+.source { margin: 0; font-size: .88rem; color: var(--muted); }
+.source a { color: var(--brand); }
+.hint { color: var(--muted); font-size: .9rem; margin: 8px 0 0; min-height: 0; }
+.footnote { margin-top: 32px; font-size: .85rem; color: var(--muted); text-align: center; }
+.timeline { margin-top: 12px; }
+.timeline > li { padding: 14px 0; }
+.timeline strong { font-size: 1rem; }
+.verdict-bar { display: flex; height: 10px; border-radius: 99px; overflow: hidden; background: var(--line); margin-bottom: 12px; }
+.verdict-bar .p { background: var(--pro); display: block; height: 100%; }
+.verdict-bar .k { background: var(--kontra); display: block; height: 100%; }
+.verdict { font-weight: 600; margin: 0 0 8px; }
+#args > li { padding: 16px 0; }
+.arg p { margin: 6px 0 10px; }
+.card { padding: 18px; }
+#argForm button, #authSubmit { margin-top: 12px; }
+input[type="range"] { margin-top: 4px; }

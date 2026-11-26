@@ -154,14 +154,20 @@
   function renderAll(meta) {
     const d = state.detail;
     $('question').textContent = meta.question;
-    $('sourceNote').textContent = d.character.verification === 'sumber_dirujuk'
-      ? `Ringkasan disusun dari sumber berikut, belum dicocokkan baris per baris: ${d.sources.join(', ')}.`
-      : 'Kronologi ini belum diverifikasi.';
+    const note = $('sourceNote');
+    note.textContent = '';
+    note.append(d.character.verification === 'sumber_dirujuk'
+      ? 'Sumber ringkasan, belum dicocokkan baris per baris: '
+      : 'Kronologi ini belum diverifikasi. ');
+    d.sources.forEach((url, i) => {
+      if (i > 0) note.append(', ');
+      note.append(h('a', { href: url, target: '_blank', rel: 'noopener noreferrer', text: new URL(url).hostname.replace(/^www\./, '') }));
+    });
 
     const progress = myProgressValue();
     $('progress').max = meta.maxAt;
     $('progress').value = progress;
-    $('progressLabel').textContent = `Sudah sampai titik ${progress} dari ${meta.maxAt}`;
+    $('progressLabel').textContent = `Titik ${progress} dari ${meta.maxAt}`;
     $('progressHint').textContent = state.me
       ? 'Progres disimpan ke akunmu.'
       : 'Sebagai tamu, progres hanya disimpan di perangkat ini. Masuk untuk menyimpannya ke akun.';
@@ -194,6 +200,9 @@
       : `Suara saat ini condong ke ${s.leading === 'pro' ? 'PRO' : 'KONTRA'}.`;
     $('verdict').textContent =
       `Pro: ${s.pro} argumen (${s.proVotes} suara) · Kontra: ${s.kontra} argumen (${s.kontraVotes} suara). ${verdict}`;
+    const total = s.proVotes + s.kontraVotes;
+    $('barPro').style.width = total ? `${(s.proVotes / total) * 100}%` : '0%';
+    $('barKontra').style.width = total ? `${(s.kontraVotes / total) * 100}%` : '0%';
 
     const ul = $('args');
     ul.textContent = '';
@@ -233,8 +242,9 @@
     if (prev && Number(prev) <= max) sel.value = prev;
     const canPost = max >= 1;
     $('argSubmit').disabled = !canPost || !state.me;
-    $('argErr').textContent = !state.me
-      ? 'Masuk untuk menulis argumen.'
+    $('argErr').textContent = '';
+    $('argHint').textContent = !state.me
+      ? 'Masuk untuk ikut berdebat. Progres tamu tetap bisa dilihat di perangkat ini.'
       : (!canPost ? 'Geser progres ke minimal titik 1 untuk menulis argumen.' : '');
   }
 
@@ -308,7 +318,7 @@
     });
     $('progress').addEventListener('change', onProgressChange);
     $('progress').addEventListener('input', () => {
-      $('progressLabel').textContent = `Sudah sampai titik ${$('progress').value} dari ${currentMeta().maxAt}`;
+      $('progressLabel').textContent = `Titik ${$('progress').value} dari ${currentMeta().maxAt}`;
     });
     $('authForm').addEventListener('submit', submitAuth);
     $('authToggle').addEventListener('click', () => showAuth(state.mode === 'login' ? 'register' : 'login'));
